@@ -171,19 +171,14 @@ class HUD:
 
     def _draw_debug_info(self, screen: pygame.Surface) -> None:
         """
-        Draw debug information.
+        Draw debug information (entity count, etc).
+        
+        Note: FPS is drawn separately by Game class for better accuracy.
 
         Args:
             screen: Pygame surface to draw on
         """
-        debug_font = pygame.font.Font(None, 18)
-        
-        # FPS (will be updated by game loop)
-        if config.SHOW_FPS:
-            fps_text = f"FPS: {pygame.time.Clock().get_fps():.1f}"
-            text_surface = debug_font.render(fps_text, True, config.COLOR_GREEN)
-            screen.blit(
-                text_surface,
-                (config.HUD_MARGIN, config.SCREEN_HEIGHT - 30),
-            )
+        # FPS is handled by game.py _draw_fps() method
+        # Could add entity count or other debug info here in the future
+        pass
 

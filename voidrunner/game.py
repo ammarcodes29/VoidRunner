@@ -133,8 +133,9 @@ class Game:
         self.current_state.enter()
 
     def _draw_fps(self) -> None:
-        """Draw FPS counter in debug mode."""
-        debug_font = self.asset_manager.get_font("debug")
+        """Draw FPS counter in debug mode with background for visibility."""
+        # Use a larger, more visible font
+        fps_font = pygame.font.Font(None, 32)
         fps = self.clock.get_fps()
         
         # Color based on performance
@@ -145,12 +146,29 @@ class Game:
         else:
             color = config.COLOR_RED
         
-        fps_text = f"FPS: {fps:.1f}"
-        text_surface = debug_font.render(fps_text, True, color)
-        self.screen.blit(
-            text_surface,
-            (config.HUD_MARGIN, config.SCREEN_HEIGHT - 30),
+        # Format with proper spacing
+        fps_text = f"FPS: {fps:5.1f}"
+        text_surface = fps_font.render(fps_text, True, color)
+        
+        # Position in bottom-left with some padding
+        text_rect = text_surface.get_rect()
+        text_rect.bottomleft = (config.HUD_MARGIN, config.SCREEN_HEIGHT - config.HUD_MARGIN)
+        
+        # Draw semi-transparent black background for visibility
+        padding = 5
+        bg_rect = pygame.Rect(
+            text_rect.left - padding,
+            text_rect.top - padding,
+            text_rect.width + padding * 2,
+            text_rect.height + padding * 2
         )
+        bg_surface = pygame.Surface((bg_rect.width, bg_rect.height))
+        bg_surface.set_alpha(180)
+        bg_surface.fill(config.COLOR_BLACK)
+        self.screen.blit(bg_surface, bg_rect.topleft)
+        
+        # Draw the FPS text
+        self.screen.blit(text_surface, text_rect)
 
     def _quit(self) -> None:
         """Clean up and quit the game."""
