@@ -282,5 +282,3 @@ This project is available under the MIT License.
 
 ---
 
-**Made with ❤️ and Python**
-
