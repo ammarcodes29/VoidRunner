@@ -31,6 +31,7 @@ class HUD:
         score: int,
         player,
         wave_number: int,
+        high_score: int = 0,
     ) -> None:
         """
         Draw all HUD elements.
@@ -40,8 +41,9 @@ class HUD:
             score: Current score
             player: Player object for health/lives info
             wave_number: Current wave number
+            high_score: Current high score to display
         """
-        self._draw_score(screen, score)
+        self._draw_score(screen, score, high_score)
         self._draw_lives(screen, player)
         self._draw_health(screen, player)
         self._draw_wave(screen, wave_number)
@@ -51,17 +53,27 @@ class HUD:
         if config.DEBUG_MODE:
             self._draw_debug_info(screen)
 
-    def _draw_score(self, screen: pygame.Surface, score: int) -> None:
+    def _draw_score(self, screen: pygame.Surface, score: int, high_score: int) -> None:
         """
-        Draw the current score.
+        Draw the current score and high score side-by-side.
 
         Args:
             screen: Pygame surface to draw on
             score: Current score value
+            high_score: High score value
         """
+        # Current score
         score_text = f"Score: {score}"
-        text_surface = self.font.render(score_text, True, config.COLOR_WHITE)
+        score_color = config.COLOR_YELLOW if score > high_score else config.COLOR_WHITE
+        text_surface = self.font.render(score_text, True, score_color)
         screen.blit(text_surface, (config.HUD_MARGIN, config.HUD_MARGIN))
+        
+        # High score (next to current score)
+        high_score_text = f"High: {high_score}"
+        high_score_color = config.COLOR_YELLOW if score > high_score else config.COLOR_GRAY
+        high_score_surface = self.font.render(high_score_text, True, high_score_color)
+        high_score_x = config.HUD_MARGIN + 200  # Position to the right of score
+        screen.blit(high_score_surface, (high_score_x, config.HUD_MARGIN))
 
     def _draw_lives(self, screen: pygame.Surface, player) -> None:
         """

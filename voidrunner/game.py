@@ -10,7 +10,8 @@ import sys
 import pygame
 
 from .managers.asset_manager import AssetManager
-from .states.playing_state import PlayingState
+from .managers.data_manager import DataManager
+from .states.menu_state import MenuState
 from .utils import config
 
 # Set up logging
@@ -50,6 +51,10 @@ class Game:
         logger.info("Loading assets...")
         self.asset_manager = AssetManager()
         
+        # Initialize data manager for high scores
+        logger.info("Loading data manager...")
+        self.data_manager = DataManager()
+        
         # Initialize game state
         self.current_state = None
         self.debug_mode = config.DEBUG_MODE
@@ -65,8 +70,8 @@ class Game:
         logger.info("Starting game loop...")
         self.running = True
         
-        # Start in playing state
-        self.current_state = PlayingState(self)
+        # Start in menu state
+        self.current_state = MenuState(self)
         self.current_state.enter()
         
         while self.running:
@@ -120,16 +125,16 @@ class Game:
                     if hasattr(self.current_state, 'game_over') and self.current_state.game_over:
                         self.running = False
                 elif event.key == pygame.K_r:
-                    # Restart game
+                    # Restart game or return to menu
                     if hasattr(self.current_state, 'game_over') and self.current_state.game_over:
-                        self._restart_game()
+                        self._return_to_menu()
 
-    def _restart_game(self) -> None:
-        """Restart the game by creating a new playing state."""
-        logger.info("Restarting game...")
+    def _return_to_menu(self) -> None:
+        """Return to main menu."""
+        logger.info("Returning to menu...")
         if self.current_state:
             self.current_state.exit()
-        self.current_state = PlayingState(self)
+        self.current_state = MenuState(self)
         self.current_state.enter()
 
     def _draw_fps(self) -> None:

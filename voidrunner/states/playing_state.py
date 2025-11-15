@@ -60,6 +60,7 @@ class PlayingState(BaseState):
         self.game_over = False
         self.wave_transition_timer = 0.0
         self.in_wave_transition = False
+        self.is_new_high_score = False
         
         # Background
         self.background = game.asset_manager.get_sprite("background")
@@ -142,8 +143,15 @@ class PlayingState(BaseState):
         
         self.score += points_earned
         
+        # Check and update high score in real-time
+        if self.score > self.game.data_manager.get_high_score():
+            self.game.data_manager.check_and_update_high_score(self.score)
+            self.is_new_high_score = True
+        
         if player_died:
             self.game_over = True
+            # Final high score check on game over
+            self.game.data_manager.check_and_update_high_score(self.score)
         
         # Check for wave completion
         if self.spawn_manager.is_wave_complete(self.enemies):
@@ -196,6 +204,7 @@ class PlayingState(BaseState):
             self.score,
             self.player,
             self.spawn_manager.get_wave_number(),
+            self.game.data_manager.get_high_score(),
         )
         
         # Draw wave transition message
@@ -242,20 +251,29 @@ class PlayingState(BaseState):
         game_over_text = "GAME OVER"
         text_surface = font.render(game_over_text, True, config.COLOR_RED)
         text_rect = text_surface.get_rect()
-        text_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 - 50)
+        text_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 - 80)
         
         # Final score
         score_font = self.game.asset_manager.get_font("hud")
         score_text = f"Final Score: {self.score}"
         score_surface = score_font.render(score_text, True, config.COLOR_WHITE)
         score_rect = score_surface.get_rect()
-        score_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + 20)
+        score_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 - 10)
+        
+        # New high score message
+        y_offset = 30
+        if self.is_new_high_score:
+            new_high_text = "NEW HIGH SCORE!"
+            new_high_surface = font.render(new_high_text, True, config.COLOR_YELLOW)
+            new_high_rect = new_high_surface.get_rect()
+            new_high_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + y_offset)
+            y_offset += 60
         
         # Instructions
         restart_text = "Press R to Restart or ESC to Quit"
         restart_surface = score_font.render(restart_text, True, config.COLOR_GRAY)
         restart_rect = restart_surface.get_rect()
-        restart_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + 60)
+        restart_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + y_offset)
         
         # Semi-transparent background
         overlay = pygame.Surface((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
@@ -265,5 +283,7 @@ class PlayingState(BaseState):
         
         screen.blit(text_surface, text_rect)
         screen.blit(score_surface, score_rect)
+        if self.is_new_high_score:
+            screen.blit(new_high_surface, new_high_rect)
         screen.blit(restart_surface, restart_rect)
 
