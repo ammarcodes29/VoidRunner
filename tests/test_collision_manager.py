@@ -144,14 +144,14 @@ class TestEnemyBulletPlayerCollisions:
         )
         enemy_bullets.add(bullet)
         
-        initial_shield = player_with_sprite.shield
+        initial_health = player_with_sprite.health
         
         collision_manager.check_enemy_bullet_player_collisions(
             enemy_bullets, player_with_sprite
         )
         
-        # Player should take damage (shield reduced)
-        assert player_with_sprite.shield < initial_shield
+        # Player should take damage (health reduced)
+        assert player_with_sprite.health < initial_health
 
     def test_enemy_bullet_hitting_player_removes_bullet(
         self, collision_manager, player_with_sprite, mock_bullet_sprite
@@ -180,7 +180,7 @@ class TestEnemyBulletPlayerCollisions:
     ):
         """Invincible player should not take damage from bullets."""
         player_with_sprite.invincible = True
-        initial_shield = player_with_sprite.shield
+        initial_health = player_with_sprite.health
         
         enemy_bullets = pygame.sprite.Group()
         bullet = Bullet(
@@ -196,8 +196,8 @@ class TestEnemyBulletPlayerCollisions:
             enemy_bullets, player_with_sprite
         )
         
-        # Shield should not change
-        assert player_with_sprite.shield == initial_shield
+        # Health should not change
+        assert player_with_sprite.health == initial_health
 
 
 class TestEnemyPlayerCollisions:
@@ -217,12 +217,12 @@ class TestEnemyPlayerCollisions:
         )
         enemies.add(enemy)
         
-        initial_shield = player_with_sprite.shield
+        initial_health = player_with_sprite.health
         
         collision_manager.check_enemy_player_collisions(enemies, player_with_sprite)
         
         # Player should take damage
-        assert player_with_sprite.shield < initial_shield
+        assert player_with_sprite.health < initial_health
 
     def test_enemy_ramming_player_destroys_enemy(
         self, collision_manager, player_with_sprite, mock_sprite

@@ -19,15 +19,15 @@ class TestPlayerInitialization:
         assert player_instance.position.x == 400
         assert player_instance.position.y == 300
 
+    def test_player_initializes_with_max_lives(self, player_instance):
+        """Player should start with maximum lives."""
+        assert player_instance.lives == config.PLAYER_MAX_LIVES
+        assert player_instance.max_lives == config.PLAYER_MAX_LIVES
+
     def test_player_initializes_with_max_health(self, player_instance):
         """Player should start with maximum health."""
         assert player_instance.health == config.PLAYER_MAX_HEALTH
         assert player_instance.max_health == config.PLAYER_MAX_HEALTH
-
-    def test_player_initializes_with_max_shield(self, player_instance):
-        """Player should start with maximum shield."""
-        assert player_instance.shield == config.PLAYER_MAX_SHIELD
-        assert player_instance.max_shield == config.PLAYER_MAX_SHIELD
 
     def test_player_initializes_not_invincible(self, player_instance):
         """Player should not be invincible at start."""
@@ -135,25 +135,25 @@ class TestPlayerShooting:
 class TestPlayerDamage:
     """Test player damage and health mechanics."""
 
-    def test_take_damage_reduces_shield_first(self, player_instance):
-        """Damage should deplete shield before health."""
+    def test_take_damage_reduces_health(self, player_instance):
+        """Damage should reduce health."""
         initial_health = player_instance.health
-        initial_shield = player_instance.shield
+        initial_lives = player_instance.lives
         
-        player_instance.take_damage(10)
-        
-        assert player_instance.shield < initial_shield
-        assert player_instance.health == initial_health
-
-    def test_take_damage_reduces_health_when_shield_empty(self, player_instance):
-        """Damage should affect health when shield is depleted."""
-        # Deplete shield
-        player_instance.shield = 0
-        initial_health = player_instance.health
-        
-        player_instance.take_damage(1)
+        player_instance.take_damage(25)
         
         assert player_instance.health < initial_health
+        assert player_instance.lives == initial_lives  # Should not lose life yet
+
+    def test_take_damage_loses_life_when_health_depleted(self, player_instance):
+        """Should lose a life when health is depleted."""
+        initial_lives = player_instance.lives
+        
+        # Deplete all health
+        player_instance.take_damage(100)
+        
+        assert player_instance.lives < initial_lives
+        assert player_instance.health == config.PLAYER_MAX_HEALTH  # Health resets
 
     def test_take_damage_triggers_invincibility(self, player_instance):
         """Taking damage should trigger invincibility frames."""
@@ -166,19 +166,22 @@ class TestPlayerDamage:
         """Invincible player should not take damage."""
         player_instance.invincible = True
         initial_health = player_instance.health
+        initial_lives = player_instance.lives
         
         player_instance.take_damage(100)
         
         assert player_instance.health == initial_health
+        assert player_instance.lives == initial_lives
 
-    def test_take_damage_returns_true_when_health_depleted(self, player_instance):
-        """take_damage should return True when player dies."""
-        player_instance.shield = 0
+    def test_take_damage_returns_true_when_all_lives_lost(self, player_instance):
+        """take_damage should return True when all lives are lost."""
+        player_instance.lives = 1
         player_instance.health = 1
         
-        died = player_instance.take_damage(1)
+        died = player_instance.take_damage(50)
         
         assert died is True
+        assert player_instance.lives == 0
 
     def test_take_damage_resets_kill_streak(self, player_instance):
         """Taking damage should reset kill streak."""
@@ -188,13 +191,13 @@ class TestPlayerDamage:
         
         assert player_instance.kill_streak == 0
 
-    def test_is_alive_returns_true_with_health(self, player_instance):
-        """is_alive should return True when health > 0."""
+    def test_is_alive_returns_true_with_lives(self, player_instance):
+        """is_alive should return True when lives > 0."""
         assert player_instance.is_alive() is True
 
-    def test_is_alive_returns_false_without_health(self, player_instance):
-        """is_alive should return False when health <= 0."""
-        player_instance.health = 0
+    def test_is_alive_returns_false_without_lives(self, player_instance):
+        """is_alive should return False when lives <= 0."""
+        player_instance.lives = 0
         assert player_instance.is_alive() is False
 
 
@@ -214,22 +217,25 @@ class TestPlayerKillStreak:
         assert player_instance.kill_streak == 0
 
 
-class TestPlayerShieldRegen:
-    """Test shield regeneration."""
+class TestPlayerHealthRegen:
+    """Test health regeneration."""
 
-    def test_shield_regenerates_over_time(self, player_instance):
-        """Shield should regenerate when below max."""
-        player_instance.shield = 50
+    def test_health_does_not_regen_immediately(self, player_instance):
+        """Health should not regenerate immediately after damage."""
+        player_instance.health = 50
+        player_instance.time_since_damage = 0.0
         
-        player_instance._update_shield_regen(1.0)
+        player_instance._update_health_regen(1.0)
         
-        assert player_instance.shield > 50
+        # Should not regen yet (need 5 seconds delay)
+        assert player_instance.health == 50
 
-    def test_shield_does_not_exceed_max(self, player_instance):
-        """Shield should not regenerate beyond max."""
-        player_instance.shield = config.PLAYER_MAX_SHIELD
+    def test_health_does_not_exceed_max(self, player_instance):
+        """Health should not regenerate beyond max."""
+        player_instance.health = config.PLAYER_MAX_HEALTH
+        player_instance.time_since_damage = 10.0
         
-        player_instance._update_shield_regen(10.0)
+        player_instance._update_health_regen(10.0)
         
-        assert player_instance.shield == config.PLAYER_MAX_SHIELD
+        assert player_instance.health == config.PLAYER_MAX_HEALTH
 
