@@ -1,0 +1,21 @@
+# VoidRunner - 2D Space Survival Shooter
+# Python 3.11+ required
+
+# Core game engine
+pygame==2.5.2
+
+# Math and utilities
+numpy==1.26.2
+
+# Testing
+pytest==7.4.3
+pytest-cov==4.1.0
+
+# Code quality
+black==23.11.0
+pylint==3.0.3
+
+# Stretch goal: Computer Vision (install after MVP)
+# mediapipe==0.10.8
+# opencv-python==4.8.1.78
+
