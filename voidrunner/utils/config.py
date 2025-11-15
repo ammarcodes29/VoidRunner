@@ -2,7 +2,6 @@
 Game configuration constants.
 
 All magic numbers and tunable parameters are defined here.
-Reference: PRD Section 8 - Configuration File
 """
 
 from pathlib import Path

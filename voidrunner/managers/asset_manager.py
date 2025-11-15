@@ -2,7 +2,6 @@
 Asset loading and caching manager.
 
 Loads all sprites, sounds, and fonts once at startup for reuse.
-Reference: PRD Section 7 - Asset Recommendations
 """
 
 import logging

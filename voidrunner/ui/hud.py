@@ -2,7 +2,6 @@
 Heads-Up Display (HUD) for game information.
 
 Displays score, health, wave number, and other player stats.
-Reference: PRD Section 2.5 - Game States & UI
 """
 
 import pygame

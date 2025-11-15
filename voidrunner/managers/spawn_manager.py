@@ -2,7 +2,6 @@
 Spawn manager for enemy wave generation.
 
 Handles wave-based enemy spawning with difficulty scaling.
-Reference: PRD Section 2.2 - Enemy System, Section 3.2 - SpawnManager Class
 """
 
 import random

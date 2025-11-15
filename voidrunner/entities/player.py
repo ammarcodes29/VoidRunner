@@ -2,7 +2,6 @@
 Player entity class.
 
 Represents the player's spaceship with movement, shooting, and damage.
-Reference: PRD Section 2.1 - Player Mechanics
 """
 
 import pygame

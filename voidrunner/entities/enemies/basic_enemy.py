@@ -2,7 +2,6 @@
 Basic Enemy implementation.
 
 Moves straight down and shoots occasionally.
-Reference: PRD Section 2.2 - Enemy System
 """
 
 import pygame

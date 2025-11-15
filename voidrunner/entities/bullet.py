@@ -2,7 +2,6 @@
 Bullet entity class.
 
 Represents projectiles fired by player or enemies.
-Reference: PRD Section 2.3 - Combat System
 """
 
 from typing import Literal

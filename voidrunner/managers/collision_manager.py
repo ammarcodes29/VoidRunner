@@ -2,7 +2,6 @@
 Collision detection manager.
 
 Handles all collision detection between game entities.
-Reference: PRD Section 2.3 - Combat System
 """
 
 import pygame

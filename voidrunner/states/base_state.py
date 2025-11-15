@@ -2,7 +2,6 @@
 Abstract base class for game states.
 
 All game states (Menu, Playing, Paused, GameOver) inherit from this class.
-Reference: PRD Section 2.5 - Game States & UI
 """
 
 from abc import ABC, abstractmethod

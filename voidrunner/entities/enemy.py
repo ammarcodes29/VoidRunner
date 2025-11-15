@@ -2,7 +2,6 @@
 Enemy base class.
 
 Abstract base for all enemy types with polymorphic behavior.
-Reference: PRD Section 2.2 - Enemy System
 """
 
 from abc import ABC, abstractmethod
