@@ -38,42 +38,49 @@ class TestPlayerInitialization:
 class TestPlayerMovement:
     """Test player movement mechanics."""
 
+    def _create_key_state(self, pressed_keys):
+        """Create a mock key state object that behaves like pygame.key.get_pressed()."""
+        class MockKeyState:
+            def __init__(self, pressed):
+                self.pressed = pressed
+            
+            def __getitem__(self, key):
+                return self.pressed.get(key, False)
+        
+        return MockKeyState(pressed_keys)
+
     def test_player_moves_up(self, player_instance):
         """Player should move up when W or UP is pressed."""
-        keys = pygame.key.ScancodeWrapper()
-        keys_dict = {pygame.K_w: True}
+        keys = self._create_key_state({pygame.K_w: True})
         
-        # Simulate key press
-        initial_y = player_instance.position.y
-        player_instance._handle_movement(1.0, keys_dict)
+        player_instance._handle_movement(1.0, keys)
         
         # Should move up (negative Y)
         assert player_instance.velocity.y < 0
 
     def test_player_moves_down(self, player_instance):
         """Player should move down when S or DOWN is pressed."""
-        keys_dict = {pygame.K_s: True}
+        keys = self._create_key_state({pygame.K_s: True})
         
-        initial_y = player_instance.position.y
-        player_instance._handle_movement(1.0, keys_dict)
+        player_instance._handle_movement(1.0, keys)
         
         # Should move down (positive Y)
         assert player_instance.velocity.y > 0
 
     def test_player_moves_left(self, player_instance):
         """Player should move left when A or LEFT is pressed."""
-        keys_dict = {pygame.K_a: True}
+        keys = self._create_key_state({pygame.K_a: True})
         
-        player_instance._handle_movement(1.0, keys_dict)
+        player_instance._handle_movement(1.0, keys)
         
         # Should move left (negative X)
         assert player_instance.velocity.x < 0
 
     def test_player_moves_right(self, player_instance):
         """Player should move right when D or RIGHT is pressed."""
-        keys_dict = {pygame.K_d: True}
+        keys = self._create_key_state({pygame.K_d: True})
         
-        player_instance._handle_movement(1.0, keys_dict)
+        player_instance._handle_movement(1.0, keys)
         
         # Should move right (positive X)
         assert player_instance.velocity.x > 0
