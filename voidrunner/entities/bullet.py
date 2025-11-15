@@ -46,7 +46,11 @@ class Bullet(pygame.sprite.Sprite):
         self.position = pygame.Vector2(x, y)
         self.velocity = velocity
         self.owner = owner
-        self.damage = config.BULLET_DAMAGE
+        # Set damage based on owner
+        if owner == "player":
+            self.damage = config.PLAYER_BULLET_DAMAGE
+        else:
+            self.damage = config.ENEMY_BULLET_DAMAGE
 
     def update(self, dt: float) -> None:
         """

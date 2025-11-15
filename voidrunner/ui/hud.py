@@ -38,12 +38,12 @@ class HUD:
         Args:
             screen: Pygame surface to draw on
             score: Current score
-            player: Player object for health/shield info
+            player: Player object for health/lives info
             wave_number: Current wave number
         """
         self._draw_score(screen, score)
+        self._draw_lives(screen, player)
         self._draw_health(screen, player)
-        self._draw_shield(screen, player)
         self._draw_wave(screen, wave_number)
         self._draw_kill_streak(screen, player)
         
@@ -63,30 +63,30 @@ class HUD:
         text_surface = self.font.render(score_text, True, config.COLOR_WHITE)
         screen.blit(text_surface, (config.HUD_MARGIN, config.HUD_MARGIN))
 
-    def _draw_health(self, screen: pygame.Surface, player) -> None:
+    def _draw_lives(self, screen: pygame.Surface, player) -> None:
         """
-        Draw player health as hearts.
+        Draw player lives count.
 
         Args:
             screen: Pygame surface to draw on
             player: Player object
         """
-        health_text = f"Health: {player.health}/{player.max_health}"
-        text_surface = self.font.render(health_text, True, config.COLOR_WHITE)
+        lives_text = f"Lives: {player.lives}/{player.max_lives}"
+        text_surface = self.font.render(lives_text, True, config.COLOR_WHITE)
         screen.blit(
             text_surface,
             (config.HUD_MARGIN, config.HUD_MARGIN + 30),
         )
 
-    def _draw_shield(self, screen: pygame.Surface, player) -> None:
+    def _draw_health(self, screen: pygame.Surface, player) -> None:
         """
-        Draw shield bar.
+        Draw health bar.
 
         Args:
             screen: Pygame surface to draw on
             player: Player object
         """
-        # Shield bar background
+        # Health bar background
         bar_x = config.HUD_MARGIN
         bar_y = config.HUD_MARGIN + 60
         bar_width = 200
@@ -99,11 +99,21 @@ class HUD:
             (bar_x, bar_y, bar_width, bar_height),
         )
         
-        # Foreground (filled based on shield)
-        fill_width = int((player.shield / player.max_shield) * bar_width)
+        # Foreground (filled based on health)
+        health_percent = max(0, player.health / player.max_health)
+        fill_width = int(health_percent * bar_width)
+        
+        # Color based on health level
+        if health_percent > 0.6:
+            bar_color = config.COLOR_GREEN
+        elif health_percent > 0.3:
+            bar_color = config.COLOR_YELLOW
+        else:
+            bar_color = config.COLOR_RED
+        
         pygame.draw.rect(
             screen,
-            config.COLOR_BLUE,
+            bar_color,
             (bar_x, bar_y, fill_width, bar_height),
         )
         
@@ -115,9 +125,9 @@ class HUD:
             2,
         )
         
-        # Shield text
-        shield_text = f"Shield: {int(player.shield)}"
-        text_surface = self.font.render(shield_text, True, config.COLOR_WHITE)
+        # Health text
+        health_text = f"Health: {int(player.health)}/{int(player.max_health)}"
+        text_surface = self.font.render(health_text, True, config.COLOR_WHITE)
         screen.blit(text_surface, (bar_x + bar_width + 10, bar_y - 2))
 
     def _draw_wave(self, screen: pygame.Surface, wave_number: int) -> None:

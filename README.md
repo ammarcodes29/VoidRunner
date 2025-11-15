@@ -27,8 +27,8 @@ VoidRunner is an arcade-style space shooter where you survive increasingly diffi
 - **Enemy Types**: Basic enemies that move and shoot (more types coming soon!)
 - **Wave System**: Increasing difficulty with each wave
 - **Combat**: Satisfying bullet collision with explosion effects
-- **HUD**: Real-time score, health, shield, and wave display
-- **Health System**: 3 lives + rechargeable shield
+- **HUD**: Real-time score, health bar, lives counter, and wave display
+- **Health System**: 3 lives with 100 health per life
 
 ### Coming Soon
 - 🔄 Power-ups (Rapid Fire, Shield Boost, Magnet)

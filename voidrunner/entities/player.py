@@ -37,11 +37,11 @@ class Player(pygame.sprite.Sprite):
         self.position = pygame.Vector2(x, y)
         self.velocity = pygame.Vector2(0, 0)
         
-        # Stats
+        # Stats (renamed: shield->health, health->lives)
+        self.lives = config.PLAYER_MAX_LIVES
         self.health = config.PLAYER_MAX_HEALTH
-        self.shield = config.PLAYER_MAX_SHIELD
+        self.max_lives = config.PLAYER_MAX_LIVES
         self.max_health = config.PLAYER_MAX_HEALTH
-        self.max_shield = config.PLAYER_MAX_SHIELD
         
         # Shooting
         self.shoot_cooldown = 0.0
@@ -53,6 +53,7 @@ class Player(pygame.sprite.Sprite):
         self.invincible = False
         self.invincibility_timer = 0.0
         self.damage_flash_timer = 0.0
+        self.time_since_damage = 0.0  # For health regen delay
         
         # Power-ups (will be managed by PowerUp classes)
         self.active_powerups: list = []
@@ -71,7 +72,7 @@ class Player(pygame.sprite.Sprite):
         self._handle_movement(dt, keys_pressed)
         self._update_shooting_cooldown(dt)
         self._update_invincibility(dt)
-        self._update_shield_regen(dt)
+        self._update_health_regen(dt)
         self._constrain_to_screen()
         
         # Update rect position
@@ -131,16 +132,22 @@ class Player(pygame.sprite.Sprite):
             if self.invincibility_timer <= 0:
                 self.invincible = False
 
-    def _update_shield_regen(self, dt: float) -> None:
+    def _update_health_regen(self, dt: float) -> None:
         """
-        Regenerate shield over time.
+        Regenerate health over time (only after delay since last damage).
 
         Args:
             dt: Delta time in seconds
         """
-        if self.shield < self.max_shield:
-            self.shield += config.PLAYER_SHIELD_REGEN_RATE * dt
-            self.shield = min(self.shield, self.max_shield)
+        # Increment time since last damage
+        self.time_since_damage += dt
+        
+        # Only regenerate if enough time has passed and health is not full
+        if (self.time_since_damage >= config.PLAYER_HEALTH_REGEN_DELAY and 
+            self.health < self.max_health and
+            config.PLAYER_HEALTH_REGEN_RATE > 0):
+            self.health += config.PLAYER_HEALTH_REGEN_RATE * dt
+            self.health = min(self.health, self.max_health)
 
     def _constrain_to_screen(self) -> None:
         """Keep player within screen boundaries."""
@@ -183,28 +190,35 @@ class Player(pygame.sprite.Sprite):
         
         return bullet
 
-    def take_damage(self, amount: int) -> bool:
+    def take_damage(self, amount: float) -> bool:
         """
-        Apply damage to player (shield first, then health).
+        Apply damage to player (health first, then lose a life).
 
         Args:
             amount: Damage to apply
 
         Returns:
-            True if player died, False otherwise
+            True if player died (all lives lost), False otherwise
         """
         if self.invincible:
             return False
         
-        # Damage shield first
-        if self.shield > 0:
-            self.shield -= amount
-            if self.shield < 0:
-                # Overflow damage goes to health
-                self.health += int(self.shield)  # shield is negative here
-                self.shield = 0
-        else:
-            self.health -= amount
+        # Reset time since damage for regen
+        self.time_since_damage = 0.0
+        
+        # Apply damage to health
+        self.health -= amount
+        
+        # If health depleted, lose a life and reset health
+        if self.health <= 0:
+            self.lives -= 1
+            if self.lives > 0:
+                # Still have lives left, reset health
+                self.health = self.max_health
+            else:
+                # Out of lives
+                self.health = 0
+                return True
         
         # Reset kill streak
         self.kill_streak = 0
@@ -214,7 +228,7 @@ class Player(pygame.sprite.Sprite):
         self.invincibility_timer = config.PLAYER_INVINCIBILITY_DURATION
         self.damage_flash_timer = config.DAMAGE_FLASH_DURATION
         
-        return self.health <= 0
+        return False
 
     def add_kill_to_streak(self) -> None:
         """Increment kill streak counter."""
@@ -225,9 +239,9 @@ class Player(pygame.sprite.Sprite):
         Check if player is still alive.
 
         Returns:
-            True if health > 0
+            True if lives > 0
         """
-        return self.health > 0
+        return self.lives > 0
 
     def draw(self, screen: pygame.Surface) -> None:
         """

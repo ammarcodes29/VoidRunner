@@ -19,9 +19,10 @@ WINDOW_TITLE: str = "VoidRunner - Space Survival Shooter"
 # ============================================================================
 PLAYER_SPEED: float = 5.0
 PLAYER_SHOOT_COOLDOWN: float = 0.25  # seconds
-PLAYER_MAX_HEALTH: int = 3
-PLAYER_MAX_SHIELD: float = 100.0
-PLAYER_SHIELD_REGEN_RATE: float = 5.0  # per second
+PLAYER_MAX_LIVES: int = 3  # Number of lives
+PLAYER_MAX_HEALTH: float = 100.0  # Health bar per life
+PLAYER_HEALTH_REGEN_RATE: float = 0.0  # No auto-regen (set to 2.0 for slow regen)
+PLAYER_HEALTH_REGEN_DELAY: float = 5.0  # Seconds before health regen starts
 PLAYER_INVINCIBILITY_DURATION: float = 1.5  # seconds after taking damage
 PLAYER_SPRITE_WIDTH: int = 64
 PLAYER_SPRITE_HEIGHT: int = 64
@@ -30,7 +31,8 @@ PLAYER_SPRITE_HEIGHT: int = 64
 # BULLET SETTINGS
 # ============================================================================
 BULLET_SPEED: float = 8.0
-BULLET_DAMAGE: int = 1
+PLAYER_BULLET_DAMAGE: int = 1  # Damage to enemies
+ENEMY_BULLET_DAMAGE: int = 25  # Damage to player
 BULLET_SPRITE_WIDTH: int = 32
 BULLET_SPRITE_HEIGHT: int = 32
 

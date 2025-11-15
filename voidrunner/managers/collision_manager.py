@@ -93,8 +93,8 @@ class CollisionManager:
         hits = pygame.sprite.spritecollide(player, enemy_bullets, True)
         
         if hits and not player.invincible:
-            # Player was hit
-            player_died = player.take_damage(1)
+            # Player was hit - deal proper enemy bullet damage
+            player_died = player.take_damage(config.ENEMY_BULLET_DAMAGE)
             self.asset_manager.play_sound("player_hit")
             return player_died
         
@@ -119,8 +119,8 @@ class CollisionManager:
         hits = pygame.sprite.spritecollide(player, enemies, True)
         
         if hits and not player.invincible:
-            # Player was hit by enemy
-            player_died = player.take_damage(1)
+            # Player was hit by enemy - ramming does more damage
+            player_died = player.take_damage(config.ENEMY_BULLET_DAMAGE * 1.5)
             self.asset_manager.play_sound("player_hit")
             self.asset_manager.play_sound("explosion")
             return player_died
