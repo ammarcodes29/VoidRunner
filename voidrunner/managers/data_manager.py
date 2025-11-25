@@ -1,13 +1,15 @@
 """
-Data persistence manager.
+Data persistence manager with SQLite database.
 
-Handles loading and saving high scores and settings to JSON files.
+Handles user authentication and high scores.
 """
 
-import json
+import sqlite3
+import hashlib
 import logging
 from pathlib import Path
 from typing import Optional
+from datetime import datetime
 
 from ..utils import config
 
@@ -16,149 +18,318 @@ logger = logging.getLogger(__name__)
 
 class DataManager:
     """
-    Manages game data persistence (high scores, settings).
-
-    All data is stored in JSON format for easy reading and modification.
+    Manages game data persistence using SQLite.
+    
+    Handles user authentication and high scores.
     """
 
     def __init__(self) -> None:
-        """Initialize the data manager and ensure data directory exists."""
+        """Initialize the data manager and database."""
         # Ensure data directory exists
         config.DATA_DIR.mkdir(parents=True, exist_ok=True)
         
-        # Initialize high score
-        self._high_score = self.load_high_score()
+        self.db_path = config.DATABASE_FILE
+        self.current_user_id: Optional[int] = None
+        self.current_username: Optional[str] = None
+        
+        # Initialize database
+        self._init_database()
+        
+        logger.info("DataManager initialized with SQLite backend")
 
-    def load_high_score(self) -> int:
+    def _init_database(self) -> None:
+        """Create database tables if they don't exist."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Users table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_login TIMESTAMP
+                )
+            """)
+            
+            # High scores table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS high_scores (
+                    score_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    score INTEGER NOT NULL,
+                    achieved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+                )
+            """)
+            
+            # Create indexes
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_high_scores_user_id 
+                ON high_scores(user_id)
+            """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_high_scores_score 
+                ON high_scores(score DESC)
+            """)
+            
+            conn.commit()
+            conn.close()
+            
+            logger.info("Database initialized successfully")
+            
+        except sqlite3.Error as e:
+            logger.error(f"Database initialization error: {e}")
+            raise
+
+    def _hash_password(self, password: str) -> str:
         """
-        Load the high score from file.
-
+        Hash a password using SHA-256.
+        
+        Args:
+            password: Plain text password
+            
         Returns:
-            High score value, or 0 if file doesn't exist
+            Hexadecimal hash string
+        """
+        return hashlib.sha256(password.encode()).hexdigest()
+
+    def signup(self, username: str, password: str) -> tuple[bool, str]:
+        """
+        Create a new user account.
+        
+        Args:
+            username: Desired username
+            password: Plain text password
+            
+        Returns:
+            Tuple of (success: bool, message: str)
+        """
+        # Validation
+        if len(username) < config.MIN_USERNAME_LENGTH:
+            return False, f"Username must be at least {config.MIN_USERNAME_LENGTH} characters"
+        if len(username) > config.MAX_USERNAME_LENGTH:
+            return False, f"Username must be at most {config.MAX_USERNAME_LENGTH} characters"
+        if len(password) < config.MIN_PASSWORD_LENGTH:
+            return False, f"Password must be at least {config.MIN_PASSWORD_LENGTH} characters"
+        if not username.replace("_", "").isalnum():
+            return False, "Username must be alphanumeric (underscores allowed)"
+        
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Check if username exists
+            cursor.execute("SELECT user_id FROM users WHERE username = ?", (username,))
+            if cursor.fetchone():
+                conn.close()
+                return False, "Username already exists"
+            
+            # Create user
+            password_hash = self._hash_password(password)
+            cursor.execute(
+                "INSERT INTO users (username, password_hash) VALUES (?, ?)",
+                (username, password_hash)
+            )
+            
+            conn.commit()
+            conn.close()
+            
+            logger.info(f"New user created: {username}")
+            return True, "Account created successfully!"
+            
+        except sqlite3.Error as e:
+            logger.error(f"Signup error: {e}")
+            return False, "Database error occurred"
+
+    def login(self, username: str, password: str) -> tuple[bool, str]:
+        """
+        Authenticate a user.
+        
+        Args:
+            username: Username
+            password: Plain text password
+            
+        Returns:
+            Tuple of (success: bool, message: str)
         """
         try:
-            if config.HIGH_SCORES_FILE.exists():
-                with open(config.HIGH_SCORES_FILE, 'r') as f:
-                    data = json.load(f)
-                    high_score = data.get('high_score', 0)
-                    logger.info(f"Loaded high score: {high_score}")
-                    return high_score
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            password_hash = self._hash_password(password)
+            cursor.execute(
+                "SELECT user_id, username FROM users WHERE username = ? AND password_hash = ?",
+                (username, password_hash)
+            )
+            
+            result = cursor.fetchone()
+            
+            if result:
+                self.current_user_id, self.current_username = result
+                
+                # Update last login
+                cursor.execute(
+                    "UPDATE users SET last_login = ? WHERE user_id = ?",
+                    (datetime.now(), self.current_user_id)
+                )
+                conn.commit()
+                conn.close()
+                
+                logger.info(f"User logged in: {username}")
+                return True, f"Welcome back, {username}!"
             else:
-                logger.info("No high score file found, starting with 0")
-                return 0
-        except (json.JSONDecodeError, IOError) as e:
-            logger.error(f"Error loading high score: {e}")
-            return 0
+                conn.close()
+                return False, "Invalid username or password"
+                
+        except sqlite3.Error as e:
+            logger.error(f"Login error: {e}")
+            return False, "Database error occurred"
 
-    def save_high_score(self, score: int) -> bool:
+    def logout(self) -> None:
+        """Log out the current user."""
+        logger.info(f"User logged out: {self.current_username}")
+        self.current_user_id = None
+        self.current_username = None
+
+    def is_logged_in(self) -> bool:
+        """Check if a user is currently logged in."""
+        return self.current_user_id is not None
+
+    def get_current_username(self) -> Optional[str]:
+        """Get the current logged-in username."""
+        return self.current_username
+
+    def save_score(self, score: int) -> bool:
         """
-        Save a new high score to file.
-
+        Save a game score for the current user.
+        
         Args:
-            score: Score to save
-
+            score: Final score
+            
         Returns:
             True if save was successful
         """
+        if not self.is_logged_in():
+            logger.warning("Cannot save score: no user logged in")
+            return False
+        
         try:
-            data = {
-                'high_score': score,
-                'last_updated': self._get_timestamp()
-            }
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
             
-            with open(config.HIGH_SCORES_FILE, 'w') as f:
-                json.dump(data, f, indent=2)
+            cursor.execute(
+                "INSERT INTO high_scores (user_id, score) VALUES (?, ?)",
+                (self.current_user_id, score)
+            )
             
-            self._high_score = score
-            logger.info(f"Saved new high score: {score}")
+            conn.commit()
+            conn.close()
+            
+            logger.info(f"Score saved: {score} for user {self.current_username}")
             return True
             
-        except IOError as e:
-            logger.error(f"Error saving high score: {e}")
+        except sqlite3.Error as e:
+            logger.error(f"Error saving score: {e}")
             return False
 
     def get_high_score(self) -> int:
         """
-        Get the current high score.
-
+        Get the current user's highest score.
+        
         Returns:
-            Current high score
+            Highest score, or 0 if none
         """
-        return self._high_score
+        if not self.is_logged_in():
+            return 0
+        
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute(
+                "SELECT MAX(score) FROM high_scores WHERE user_id = ?",
+                (self.current_user_id,)
+            )
+            
+            result = cursor.fetchone()[0]
+            conn.close()
+            
+            return result if result else 0
+            
+        except sqlite3.Error as e:
+            logger.error(f"Error fetching high score: {e}")
+            return 0
 
-    def check_and_update_high_score(self, current_score: int) -> bool:
+    def get_user_scores(self, limit: int = 10) -> list[dict]:
         """
-        Check if current score is a new high score and update if so.
-
+        Get the current user's top scores.
+        
         Args:
-            current_score: Current game score
-
+            limit: Maximum number of scores to return
+            
         Returns:
-            True if this is a new high score
+            List of score dictionaries
         """
-        if current_score > self._high_score:
-            self.save_high_score(current_score)
-            return True
-        return False
+        if not self.is_logged_in():
+            return []
+        
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            cursor.execute(
+                """SELECT score, achieved_at
+                   FROM high_scores 
+                   WHERE user_id = ?
+                   ORDER BY score DESC
+                   LIMIT ?""",
+                (self.current_user_id, limit)
+            )
+            
+            scores = [dict(row) for row in cursor.fetchall()]
+            conn.close()
+            
+            return scores
+            
+        except sqlite3.Error as e:
+            logger.error(f"Error fetching user scores: {e}")
+            return []
 
-    def _get_timestamp(self) -> str:
+    def get_global_leaderboard(self, limit: int = 10) -> list[dict]:
         """
-        Get current timestamp as string.
-
+        Get global top scores across all users (one high score per user).
+        
+        Args:
+            limit: Maximum number of scores to return
+            
         Returns:
-            ISO format timestamp
-        """
-        from datetime import datetime
-        return datetime.now().isoformat()
-
-    def load_settings(self) -> dict:
-        """
-        Load game settings from file.
-
-        Returns:
-            Dictionary of settings, or defaults if file doesn't exist
+            List of score dictionaries with usernames
         """
         try:
-            if config.SETTINGS_FILE.exists():
-                with open(config.SETTINGS_FILE, 'r') as f:
-                    settings = json.load(f)
-                    logger.info("Loaded settings")
-                    return settings
-            else:
-                return self._get_default_settings()
-        except (json.JSONDecodeError, IOError) as e:
-            logger.error(f"Error loading settings: {e}")
-            return self._get_default_settings()
-
-    def save_settings(self, settings: dict) -> bool:
-        """
-        Save game settings to file.
-
-        Args:
-            settings: Dictionary of settings to save
-
-        Returns:
-            True if save was successful
-        """
-        try:
-            with open(config.SETTINGS_FILE, 'w') as f:
-                json.dump(settings, f, indent=2)
-            logger.info("Saved settings")
-            return True
-        except IOError as e:
-            logger.error(f"Error saving settings: {e}")
-            return False
-
-    def _get_default_settings(self) -> dict:
-        """
-        Get default game settings.
-
-        Returns:
-            Dictionary of default settings
-        """
-        return {
-            'music_volume': config.MUSIC_VOLUME,
-            'sfx_volume': config.SFX_VOLUME,
-            'debug_mode': config.DEBUG_MODE
-        }
-
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            cursor.execute(
+                """SELECT u.username, MAX(h.score) as score, 
+                          MAX(h.achieved_at) as achieved_at
+                   FROM high_scores h
+                   JOIN users u ON h.user_id = u.user_id
+                   GROUP BY u.user_id, u.username
+                   ORDER BY score DESC
+                   LIMIT ?""",
+                (limit,)
+            )
+            
+            scores = [dict(row) for row in cursor.fetchall()]
+            conn.close()
+            
+            return scores
+            
+        except sqlite3.Error as e:
+            logger.error(f"Error fetching leaderboard: {e}")
+            return []

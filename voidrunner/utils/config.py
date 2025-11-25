@@ -130,8 +130,16 @@ DATA_DIR: Path = PROJECT_ROOT / "voidrunner" / "data"
 ASSETS_DIR: Path = PROJECT_ROOT / "voidrunner" / "assets"
 
 # Data files
-HIGH_SCORES_FILE: Path = DATA_DIR / "high_scores.json"
+HIGH_SCORES_FILE: Path = DATA_DIR / "high_scores.json"  # Legacy - will be replaced by SQLite
 SETTINGS_FILE: Path = DATA_DIR / "settings.json"
+DATABASE_FILE: Path = DATA_DIR / "voidrunner.db"
+
+# ============================================================================
+# DATABASE SETTINGS
+# ============================================================================
+MIN_USERNAME_LENGTH: int = 3
+MAX_USERNAME_LENGTH: int = 20
+MIN_PASSWORD_LENGTH: int = 6
 
 # Asset directories
 SPRITES_DIR: Path = ASSETS_DIR / "sprites"

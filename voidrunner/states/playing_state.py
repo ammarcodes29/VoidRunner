@@ -74,16 +74,29 @@ class PlayingState(BaseState):
         """
         for event in events:
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    # TODO: Transition to pause state
-                    pass
-                elif event.key == pygame.K_SPACE:
-                    # Shoot
-                    if self.player.can_shoot():
-                        bullet = self.player.shoot()
-                        self.player_bullets.add(bullet)
-                        self.all_sprites.add(bullet)
-                        self.game.asset_manager.play_sound("player_shoot")
+                if self.game_over:
+                    # Handle game over input
+                    if event.key == pygame.K_r:
+                        # Restart game
+                        self._restart_game()
+                    elif event.key == pygame.K_m:
+                        # Return to menu
+                        self._return_to_menu()
+                    elif event.key == pygame.K_ESCAPE:
+                        # Quit game
+                        self.game.running = False
+                else:
+                    # Normal gameplay input
+                    if event.key == pygame.K_ESCAPE:
+                        # TODO: Transition to pause state
+                        pass
+                    elif event.key == pygame.K_SPACE:
+                        # Shoot
+                        if self.player.can_shoot():
+                            bullet = self.player.shoot()
+                            self.player_bullets.add(bullet)
+                            self.all_sprites.add(bullet)
+                            self.game.asset_manager.play_sound("player_shoot")
 
     def update(self, dt: float) -> None:
         """
@@ -143,15 +156,13 @@ class PlayingState(BaseState):
         
         self.score += points_earned
         
-        # Check and update high score in real-time
-        if self.score > self.game.data_manager.get_high_score():
-            self.game.data_manager.check_and_update_high_score(self.score)
-            self.is_new_high_score = True
-        
         if player_died:
             self.game_over = True
-            # Final high score check on game over
-            self.game.data_manager.check_and_update_high_score(self.score)
+            # Save score to database and check if it's a new high score
+            previous_high_score = self.game.data_manager.get_high_score()
+            self.game.data_manager.save_score(self.score)
+            if self.score > previous_high_score:
+                self.is_new_high_score = True
         
         # Check for wave completion
         if self.spawn_manager.is_wave_complete(self.enemies):
@@ -175,6 +186,20 @@ class PlayingState(BaseState):
         """Start the wave transition delay."""
         self.in_wave_transition = True
         self.wave_transition_timer = 0.0
+
+    def _restart_game(self) -> None:
+        """Restart the game."""
+        from .playing_state import PlayingState
+        self.exit()
+        self.game.current_state = PlayingState(self.game)
+        self.game.current_state.enter()
+
+    def _return_to_menu(self) -> None:
+        """Return to main menu."""
+        from .menu_state import MenuState
+        self.exit()
+        self.game.current_state = MenuState(self.game)
+        self.game.current_state.enter()
 
     def draw(self, screen: pygame.Surface) -> None:
         """
@@ -270,7 +295,7 @@ class PlayingState(BaseState):
             y_offset += 60
         
         # Instructions
-        restart_text = "Press R to Restart or ESC to Quit"
+        restart_text = "R: Restart  |  M: Menu  |  ESC: Quit"
         restart_surface = score_font.render(restart_text, True, config.COLOR_GRAY)
         restart_rect = restart_surface.get_rect()
         restart_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + y_offset)

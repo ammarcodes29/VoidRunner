@@ -11,7 +11,7 @@ import pygame
 
 from .managers.asset_manager import AssetManager
 from .managers.data_manager import DataManager
-from .states.menu_state import MenuState
+from .states.login_state import LoginState
 from .utils import config
 
 # Set up logging
@@ -70,8 +70,8 @@ class Game:
         logger.info("Starting game loop...")
         self.running = True
         
-        # Start in menu state
-        self.current_state = MenuState(self)
+        # Start with login state
+        self.current_state = LoginState(self)
         self.current_state.enter()
         
         while self.running:
@@ -134,6 +134,7 @@ class Game:
         logger.info("Returning to menu...")
         if self.current_state:
             self.current_state.exit()
+        from .states.menu_state import MenuState
         self.current_state = MenuState(self)
         self.current_state.enter()
 
