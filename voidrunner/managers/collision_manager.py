@@ -44,6 +44,7 @@ class CollisionManager:
             Points earned from destroyed enemies
         """
         points_earned = 0
+        kills = 0
         
         # Check collisions (remove both bullet and enemy on hit)
         hits = pygame.sprite.groupcollide(
@@ -56,6 +57,7 @@ class CollisionManager:
                 if enemy.take_damage(bullet.damage):
                     # Enemy died
                     enemy.kill()
+                    kills += 1
                     
                     # Award points
                     base_points = enemy.score_value
@@ -72,7 +74,7 @@ class CollisionManager:
                     # Play sound effect
                     self.asset_manager.play_sound("explosion")
         
-        return points_earned
+        return points_earned, kills
 
     def check_enemy_bullet_player_collisions(
         self,
@@ -133,7 +135,7 @@ class CollisionManager:
         player_bullets: pygame.sprite.Group,
         enemies: pygame.sprite.Group,
         enemy_bullets: pygame.sprite.Group,
-    ) -> tuple[int, bool]:
+    ) -> tuple[int, bool, int]:
         """
         Check all collision types in one call.
 
@@ -146,12 +148,13 @@ class CollisionManager:
         Returns:
             Tuple of (points_earned, player_died)
         """
-        points = self.check_player_bullet_enemy_collisions(player_bullets, enemies, player)
+
+        points, kills = self.check_player_bullet_enemy_collisions(player_bullets, enemies, player)
         
         died1 = self.check_enemy_bullet_player_collisions(enemy_bullets, player)
         died2 = self.check_enemy_player_collisions(enemies, player)
         
         player_died = died1 or died2
         
-        return points, player_died
+        return points, player_died, kills
 

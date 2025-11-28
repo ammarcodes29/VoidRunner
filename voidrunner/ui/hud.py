@@ -32,6 +32,7 @@ class HUD:
         player,
         wave_number: int,
         high_score: int = 0,
+        spawn_manager = None,
     ) -> None:
         """
         Draw all HUD elements.
@@ -48,6 +49,7 @@ class HUD:
         self._draw_health(screen, player)
         self._draw_wave(screen, wave_number)
         self._draw_kill_streak(screen, player)
+        self._draw_enemy_kills(screen, spawn_manager)
         
         # Debug info
         if config.DEBUG_MODE:
@@ -194,3 +196,24 @@ class HUD:
         # Could add entity count or other debug info here in the future
         pass
 
+    def _draw_enemy_kills(self, screen: pygame.Surface, spawn_manager) -> None:
+        """
+        Draw how many enemies the player has killed this wave.
+
+        Args:
+            screen: Pygame surface to draw on
+            spawn_manager: SpawnManager that stores kills and total enemies
+        """
+        kill_text = (
+            f"Kills: {spawn_manager.enemies_killed_this_wave}"
+            f"/{spawn_manager.max_kills_this_wave}"
+        )
+        text_surface = self.font.render(kill_text, True, config.COLOR_WHITE)
+
+        # Position under the wave text (top-right corner)
+        text_rect = text_surface.get_rect()
+        text_rect.topright = (
+            config.SCREEN_WIDTH - config.HUD_MARGIN,
+            config.HUD_MARGIN + 60,
+        )
+        screen.blit(text_surface, text_rect)

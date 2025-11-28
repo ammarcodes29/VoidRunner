@@ -147,12 +147,15 @@ class PlayingState(BaseState):
                 self.game.asset_manager.play_sound("enemy_shoot")
         
         # Check collisions
-        points_earned, player_died = self.collision_manager.check_all_collisions(
+        points_earned, player_died, kills = self.collision_manager.check_all_collisions(
             self.player,
             self.player_bullets,
             self.enemies,
             self.enemy_bullets,
         )
+
+        # Counts enemies killed current wave
+        self.spawn_manager.enemies_killed_this_wave += kills
         
         self.score += points_earned
         
@@ -166,6 +169,13 @@ class PlayingState(BaseState):
         
         # Check for wave completion
         if self.spawn_manager.is_wave_complete(self.enemies):
+            self.player.hp = min(self.player.max_health, self.player.health + 50)
+            for bullet in self.player_bullets:
+                bullet.kill()
+            for bullet in self.enemy_bullets:
+                bullet.kill()
+            for enemy in self.enemies:
+                enemy.kill()
             self._start_wave_transition()
 
     def _update_wave_transition(self, dt: float) -> None:
@@ -230,6 +240,7 @@ class PlayingState(BaseState):
             self.player,
             self.spawn_manager.get_wave_number(),
             self.game.data_manager.get_high_score(),
+            spawn_manager=self.spawn_manager,
         )
         
         # Draw wave transition message

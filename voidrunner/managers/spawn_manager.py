@@ -30,12 +30,14 @@ class SpawnManager:
         
         self.current_wave = 1
         self.enemies_spawned_this_wave = 0
-        self.enemies_to_spawn_this_wave = config.ENEMIES_PER_WAVE_BASE
+        self.max_kills_this_wave = config.ENEMIES_PER_WAVE_BASE
+        self.enemies_killed_this_wave = 0
         
         self.spawn_timer = 0.0
         self.spawn_interval = config.ENEMY_SPAWN_RATE_BASE
         
-        self.wave_complete = False
+        self.max_alive = config.ENEMIES_ON_SCREEN_MAX
+        # self.wave_complete = False
 
     def update(self, dt: float, enemy_group: pygame.sprite.Group) -> None:
         """
@@ -45,24 +47,36 @@ class SpawnManager:
             dt: Delta time in seconds
             enemy_group: Sprite group to add new enemies to
         """
-        if self.wave_complete:
+        if self.enemies_killed_this_wave >= self.max_kills_this_wave:
             return
         
         # Update spawn timer
         self.spawn_timer += dt
+
+        alive_enemies = len(enemy_group)
         
+        can_spawn = (alive_enemies < self.max_alive and self.enemies_killed_this_wave < self.max_kills_this_wave)
         # Check if it's time to spawn
-        if self.spawn_timer >= self.spawn_interval:
+        if not can_spawn:
+            return
+
+        if (self.spawn_timer >= self.spawn_interval):
             self.spawn_timer = 0.0
+            self._spawn_enemy(enemy_group)
+            self.enemies_spawned_this_wave += 1
+
+        # if self.spawn_timer >= self.spawn_interval:
+        #     self.spawn_timer = 0.0
             
-            # Spawn enemy if we haven't reached the wave limit
-            if self.enemies_spawned_this_wave < self.enemies_to_spawn_this_wave:
-                self._spawn_enemy(enemy_group)
-                self.enemies_spawned_this_wave += 1
-            
-            # Check if wave is complete
-            if self.enemies_spawned_this_wave >= self.enemies_to_spawn_this_wave:
-                self.wave_complete = True
+        #     # Spawn enemy if we haven't reached the wave limit
+        #     if self.enemies_spawned_this_wave < self.max_kills_this_wave:
+        #         self._spawn_enemy(enemy_group)
+        #         self.enemies_spawned_this_wave += 1
+
+
+        #     # Check if wave is complete
+        #     if self.enemies_spawned_this_wave >= self.max_kills_this_wave:
+        #         self.wave_complete = True
 
     def _spawn_enemy(self, enemy_group: pygame.sprite.Group) -> None:
         """
@@ -87,9 +101,10 @@ class SpawnManager:
         Progress to the next wave with increased difficulty.
         """
         self.current_wave += 1
+        self.enemies_killed_this_wave = 0
         
         # Increase enemies per wave
-        self.enemies_to_spawn_this_wave = (
+        self.max_kills_this_wave = (
             config.ENEMIES_PER_WAVE_BASE
             + (self.current_wave - 1) * config.ENEMIES_PER_WAVE_INCREMENT
         )
@@ -104,7 +119,7 @@ class SpawnManager:
         
         # Reset wave state
         self.enemies_spawned_this_wave = 0
-        self.wave_complete = False
+        # self.wave_complete = False
         self.spawn_timer = 0.0
 
     def is_wave_complete(self, enemy_group: pygame.sprite.Group) -> bool:
@@ -120,7 +135,7 @@ class SpawnManager:
         Returns:
             True if wave is complete
         """
-        return self.wave_complete and len(enemy_group) == 0
+        return self.enemies_killed_this_wave >= self.max_kills_this_wave 
 
     def get_wave_number(self) -> int:
         """
@@ -131,3 +146,5 @@ class SpawnManager:
         """
         return self.current_wave
 
+    def register_enemy_killed(self):
+        self.enemies_killed_this_wave += 1

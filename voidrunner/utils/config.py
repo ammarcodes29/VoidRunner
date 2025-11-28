@@ -44,6 +44,7 @@ ENEMY_SPAWN_RATE_BASE: float = 2.0  # seconds between spawns
 WAVE_DIFFICULTY_MULTIPLIER: float = 1.15  # spawn rate increase per wave
 ENEMY_SPRITE_WIDTH: int = 64
 ENEMY_SPRITE_HEIGHT: int = 64
+ENEMIES_ON_SCREEN_MAX: int = 5
 
 # Enemy-specific speeds (multipliers of base speed)
 BASIC_ENEMY_SPEED_MULT: float = 1.0
