@@ -45,6 +45,11 @@ class SpawnManager:
         self.boss_spawned = False
         self.boss_killed = False
         self.boss_level = 0
+        
+        # Difficulty scaling (progressive difficulty every 6 waves)
+        self.difficulty_tier = 0  # Increases every DIFFICULTY_SCALE_INTERVAL waves
+        self.bullet_speed_multiplier = 1.0  # Multiplier for enemy bullet speed
+        self.fire_rate_multiplier = 1.0  # Multiplier for enemy fire rate
 
     def update(self, dt: float, enemy_group: pygame.sprite.Group) -> None:
         """
@@ -117,15 +122,28 @@ class SpawnManager:
             k=1
         )[0]
         
+        # Apply difficulty scaling multipliers to spawned enemies
         if enemy_type == "basic":
             sprite = self.asset_manager.get_sprite("basic_enemy")
-            enemy = BasicEnemy(x, y, sprite)
+            enemy = BasicEnemy(
+                x, y, sprite,
+                bullet_speed_multiplier=self.bullet_speed_multiplier,
+                fire_rate_multiplier=self.fire_rate_multiplier
+            )
         elif enemy_type == "chaser":
             sprite = self.asset_manager.get_sprite("chaser_enemy")
-            enemy = ChaserEnemy(x, y, sprite)
+            enemy = ChaserEnemy(
+                x, y, sprite,
+                bullet_speed_multiplier=self.bullet_speed_multiplier,
+                fire_rate_multiplier=self.fire_rate_multiplier
+            )
         else:  # zigzag
             sprite = self.asset_manager.get_sprite("zigzag_enemy")
-            enemy = ZigzagEnemy(x, y, sprite)
+            enemy = ZigzagEnemy(
+                x, y, sprite,
+                bullet_speed_multiplier=self.bullet_speed_multiplier,
+                fire_rate_multiplier=self.fire_rate_multiplier
+            )
         
         enemy_group.add(enemy)
 
@@ -153,6 +171,7 @@ class SpawnManager:
     def advance_wave(self) -> None:
         """
         Progress to the next wave with increased difficulty.
+        Applies progressive difficulty scaling every 6 waves (not on boss waves).
         """
         self.current_wave += 1
         self.enemies_killed_this_wave = 0
@@ -166,6 +185,24 @@ class SpawnManager:
             config.ENEMIES_PER_WAVE_BASE
             + (self.current_wave - 1) * config.ENEMIES_PER_WAVE_INCREMENT
         )
+        
+        # Apply progressive difficulty scaling every DIFFICULTY_SCALE_INTERVAL waves
+        # BUT NOT on boss waves (5, 10, 15, 20...) - only on 6, 12, 18, 24...
+        if (self.current_wave % config.DIFFICULTY_SCALE_INTERVAL == 0 and 
+            not self.is_boss_wave()):
+            self.difficulty_tier += 1
+            
+            # Increase bullet speed and fire rate for regular enemies
+            self.bullet_speed_multiplier *= config.ENEMY_BULLET_SPEED_SCALE
+            self.fire_rate_multiplier *= config.ENEMY_FIRE_RATE_SCALE
+            
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(
+                f"Wave {self.current_wave}: Difficulty scaled! "
+                f"Bullet speed: {self.bullet_speed_multiplier:.2f}x, "
+                f"Fire rate: {self.fire_rate_multiplier:.2f}x"
+            )
         
         # Decrease spawn interval (faster spawning)
         self.spawn_interval = config.ENEMY_SPAWN_RATE_BASE / (

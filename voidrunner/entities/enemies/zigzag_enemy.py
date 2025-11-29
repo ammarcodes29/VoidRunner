@@ -19,7 +19,14 @@ class ZigzagEnemy(Enemy):
     the player, making it easier to predict but harder to aim at.
     """
 
-    def __init__(self, x: float, y: float, sprite: pygame.Surface) -> None:
+    def __init__(
+        self,
+        x: float,
+        y: float,
+        sprite: pygame.Surface,
+        bullet_speed_multiplier: float = 1.0,
+        fire_rate_multiplier: float = 1.0,
+    ) -> None:
         """
         Initialize a zigzag enemy.
 
@@ -27,6 +34,8 @@ class ZigzagEnemy(Enemy):
             x: Starting x position
             y: Starting y position
             sprite: Pygame surface for rendering
+            bullet_speed_multiplier: Difficulty scaling for bullet speed
+            fire_rate_multiplier: Difficulty scaling for fire rate
         """
         speed = config.ENEMY_BASE_SPEED * config.ZIGZAG_ENEMY_SPEED_MULT
         super().__init__(
@@ -36,6 +45,8 @@ class ZigzagEnemy(Enemy):
             speed=speed,
             score_value=config.ZIGZAG_ENEMY_POINTS,
             sprite=sprite,
+            bullet_speed_multiplier=bullet_speed_multiplier,
+            fire_rate_multiplier=fire_rate_multiplier,
         )
         
         # Zigzag enemies can shoot
