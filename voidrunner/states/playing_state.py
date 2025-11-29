@@ -166,6 +166,8 @@ class PlayingState(BaseState):
         
         if player_died:
             self.game_over = True
+            # Play game over sound
+            self.game.asset_manager.play_sound("player_hit")
             # Save score to database and check if it's a new high score
             previous_high_score = self.game.data_manager.get_high_score()
             self.game.data_manager.save_score(self.score)
