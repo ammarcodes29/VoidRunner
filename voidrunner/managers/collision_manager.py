@@ -31,6 +31,7 @@ class CollisionManager:
         player_bullets: pygame.sprite.Group,
         enemies: pygame.sprite.Group,
         player,
+        hit_effects: pygame.sprite.Group,
     ) -> int:
         """
         Check collisions between player bullets and enemies.
@@ -39,6 +40,7 @@ class CollisionManager:
             player_bullets: Group of player bullet sprites
             enemies: Group of enemy sprites
             player: Player object (for streak tracking)
+            hit_effects: Group to add hit effect sprites to
 
         Returns:
             Points earned from destroyed enemies
@@ -53,6 +55,13 @@ class CollisionManager:
         
         for bullet, hit_enemies in hits.items():
             for enemy in hit_enemies:
+                # Create hit effect at collision point
+                hit_sprite = self.asset_manager.get_sprite("player_bullet_hit")
+                if hit_sprite:
+                    from ..entities.hit_effect import HitEffect
+                    hit_effect = HitEffect(bullet.rect.centerx, bullet.rect.centery, hit_sprite)
+                    hit_effects.add(hit_effect)
+                
                 # Apply damage
                 if enemy.take_damage(bullet.damage):
                     # Enemy died
@@ -80,6 +89,7 @@ class CollisionManager:
         self,
         enemy_bullets: pygame.sprite.Group,
         player,
+        hit_effects: pygame.sprite.Group,
     ) -> bool:
         """
         Check collisions between enemy bullets and player.
@@ -87,6 +97,7 @@ class CollisionManager:
         Args:
             enemy_bullets: Group of enemy bullet sprites
             player: Player sprite
+            hit_effects: Group to add hit effect sprites to
 
         Returns:
             True if player was hit and died
@@ -95,6 +106,14 @@ class CollisionManager:
         hits = pygame.sprite.spritecollide(player, enemy_bullets, True)
         
         if hits and not player.invincible:
+            # Create hit effect at collision point
+            for bullet in hits:
+                hit_sprite = self.asset_manager.get_sprite("enemy_bullet_hit")
+                if hit_sprite:
+                    from ..entities.hit_effect import HitEffect
+                    hit_effect = HitEffect(bullet.rect.centerx, bullet.rect.centery, hit_sprite)
+                    hit_effects.add(hit_effect)
+            
             # Player was hit - deal proper enemy bullet damage
             player_died = player.take_damage(config.ENEMY_BULLET_DAMAGE)
             self.asset_manager.play_sound("player_hit")
@@ -135,6 +154,7 @@ class CollisionManager:
         player_bullets: pygame.sprite.Group,
         enemies: pygame.sprite.Group,
         enemy_bullets: pygame.sprite.Group,
+        hit_effects: pygame.sprite.Group,
     ) -> tuple[int, bool, int]:
         """
         Check all collision types in one call.
@@ -144,14 +164,17 @@ class CollisionManager:
             player_bullets: Group of player bullet sprites
             enemies: Group of enemy sprites
             enemy_bullets: Group of enemy bullet sprites
+            hit_effects: Group to add hit effect sprites to
 
         Returns:
-            Tuple of (points_earned, player_died)
+            Tuple of (points_earned, player_died, kills)
         """
 
-        points, kills = self.check_player_bullet_enemy_collisions(player_bullets, enemies, player)
+        points, kills = self.check_player_bullet_enemy_collisions(
+            player_bullets, enemies, player, hit_effects
+        )
         
-        died1 = self.check_enemy_bullet_player_collisions(enemy_bullets, player)
+        died1 = self.check_enemy_bullet_player_collisions(enemy_bullets, player, hit_effects)
         died2 = self.check_enemy_player_collisions(enemies, player)
         
         player_died = died1 or died2

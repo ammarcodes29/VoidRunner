@@ -38,6 +38,7 @@ class PlayingState(BaseState):
         self.player_bullets = pygame.sprite.Group()
         self.enemy_bullets = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
+        self.hit_effects = pygame.sprite.Group()
         self.all_sprites = pygame.sprite.Group()
         
         # Player
@@ -134,6 +135,9 @@ class PlayingState(BaseState):
         self.player_bullets.update(dt)
         self.enemy_bullets.update(dt)
         
+        # Update hit effects
+        self.hit_effects.update(dt)
+        
         # Update enemies
         for enemy in self.enemies:
             enemy.update(dt, self.player.position)
@@ -152,6 +156,7 @@ class PlayingState(BaseState):
             self.player_bullets,
             self.enemies,
             self.enemy_bullets,
+            self.hit_effects,
         )
 
         # Counts enemies killed current wave
@@ -232,6 +237,10 @@ class PlayingState(BaseState):
         
         for enemy in self.enemies:
             enemy.draw(screen)
+        
+        # Draw hit effects
+        for effect in self.hit_effects:
+            effect.draw(screen)
         
         # Draw HUD
         self.hud.draw(
