@@ -30,6 +30,7 @@ class Player(pygame.sprite.Sprite):
         """
         super().__init__()
         
+        self.original_image = sprite.copy()  # Store original for damage flash
         self.image = sprite
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
@@ -128,9 +129,14 @@ class Player(pygame.sprite.Sprite):
         """
         if self.invincibility_timer > 0:
             self.invincibility_timer -= dt
-            self.damage_flash_timer -= dt
             if self.invincibility_timer <= 0:
                 self.invincible = False
+        
+        if self.damage_flash_timer > 0:
+            self.damage_flash_timer -= dt
+            if self.damage_flash_timer <= 0:
+                # Restore original image
+                self.image = self.original_image.copy()
 
     def _update_health_regen(self, dt: float) -> None:
         """
@@ -250,11 +256,14 @@ class Player(pygame.sprite.Sprite):
         Args:
             screen: Pygame surface to draw on
         """
-        # Flash effect during damage
+        # Flash red during damage
         if self.damage_flash_timer > 0:
-            # Alternate visibility for flash effect
-            if int(self.damage_flash_timer * 20) % 2 == 0:
-                return  # Skip drawing this frame
+            # Create red-tinted version
+            red_surface = self.original_image.copy()
+            red_overlay = pygame.Surface(red_surface.get_size(), pygame.SRCALPHA)
+            red_overlay.fill((255, 0, 0, 128))  # Red with 50% alpha
+            red_surface.blit(red_overlay, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+            self.image = red_surface
         
         screen.blit(self.image, self.rect)
         

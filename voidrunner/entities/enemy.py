@@ -40,6 +40,7 @@ class Enemy(pygame.sprite.Sprite, ABC):
         """
         super().__init__()
         
+        self.original_image = sprite.copy()  # Store original for damage flash
         self.image = sprite
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
@@ -55,6 +56,9 @@ class Enemy(pygame.sprite.Sprite, ABC):
         # Shooting (some enemies shoot)
         self.can_shoot = False
         self.shoot_timer = 0.0
+        
+        # Damage flash effect
+        self.damage_flash_timer = 0.0
 
     @abstractmethod
     def update_behavior(self, dt: float, player_pos: pygame.Vector2) -> None:
@@ -89,6 +93,13 @@ class Enemy(pygame.sprite.Sprite, ABC):
         if self.shoot_timer > 0:
             self.shoot_timer -= dt
         
+        # Update damage flash timer
+        if self.damage_flash_timer > 0:
+            self.damage_flash_timer -= dt
+            if self.damage_flash_timer <= 0:
+                # Restore original image
+                self.image = self.original_image.copy()
+        
         # Despawn if off-screen
         if self._is_off_screen():
             self.kill()
@@ -118,6 +129,11 @@ class Enemy(pygame.sprite.Sprite, ABC):
             True if enemy died, False otherwise
         """
         self.health -= amount
+        
+        # Trigger damage flash if still alive
+        if self.health > 0:
+            self.damage_flash_timer = config.DAMAGE_FLASH_DURATION
+        
         return self.health <= 0
 
     def should_shoot(self) -> bool:
@@ -164,11 +180,20 @@ class Enemy(pygame.sprite.Sprite, ABC):
 
     def draw(self, screen: pygame.Surface) -> None:
         """
-        Draw the enemy.
+        Draw the enemy with damage flash effect.
 
         Args:
             screen: Pygame surface to draw on
         """
+        # Flash red during damage
+        if self.damage_flash_timer > 0:
+            # Create red-tinted version
+            red_surface = self.original_image.copy()
+            red_overlay = pygame.Surface(red_surface.get_size(), pygame.SRCALPHA)
+            red_overlay.fill((255, 0, 0, 128))  # Red with 50% alpha
+            red_surface.blit(red_overlay, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+            self.image = red_surface
+        
         screen.blit(self.image, self.rect)
         
         # Debug: Draw collision box
