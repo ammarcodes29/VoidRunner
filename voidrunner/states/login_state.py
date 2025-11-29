@@ -32,11 +32,11 @@ class LoginState(BaseState):
         self.active_field = "username"  # "username" or "password"
         
         # Fonts
-        self.title_font = pygame.font.Font(None, 72)
-        self.menu_font = pygame.font.Font(None, 48)
-        self.input_font = pygame.font.Font(None, 36)
-        self.message_font = pygame.font.Font(None, 28)
-        self.button_font = pygame.font.Font(None, 42)
+        self.title_font = game.asset_manager.load_font(72)
+        self.menu_font = game.asset_manager.load_font(48)
+        self.input_font = game.asset_manager.load_font(36)
+        self.message_font = game.asset_manager.load_font(28)
+        self.button_font = game.asset_manager.load_font(42)
         
         # Mouse tracking
         self.mouse_pos = (0, 0)

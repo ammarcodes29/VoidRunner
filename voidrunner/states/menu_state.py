@@ -27,7 +27,7 @@ class MenuState(BaseState):
         super().__init__(game)
         
         # Fonts
-        self.title_font = pygame.font.Font(None, 96)
+        self.title_font = game.asset_manager.load_font(96)
         self.menu_font = game.asset_manager.get_font("menu")
         self.info_font = game.asset_manager.get_font("hud")
         

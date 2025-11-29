@@ -25,10 +25,10 @@ class LeaderboardState(BaseState):
         super().__init__(game)
         
         # Fonts
-        self.title_font = pygame.font.Font(None, 72)
-        self.header_font = pygame.font.Font(None, 40)
-        self.score_font = pygame.font.Font(None, 32)
-        self.button_font = pygame.font.Font(None, 42)
+        self.title_font = game.asset_manager.load_font(72)
+        self.header_font = game.asset_manager.load_font(40)
+        self.score_font = game.asset_manager.load_font(32)
+        self.button_font = game.asset_manager.load_font(42)
         
         # Background
         self.background = game.asset_manager.get_sprite("background")

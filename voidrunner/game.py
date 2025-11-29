@@ -141,7 +141,7 @@ class Game:
     def _draw_fps(self) -> None:
         """Draw FPS counter in debug mode with background for visibility."""
         # Use a larger, more visible font
-        fps_font = pygame.font.Font(None, 32)
+        fps_font = self.asset_manager.load_font(32)
         fps = self.clock.get_fps()
         
         # Color based on performance
