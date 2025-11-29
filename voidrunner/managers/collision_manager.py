@@ -32,6 +32,7 @@ class CollisionManager:
         enemies: pygame.sprite.Group,
         player,
         hit_effects: pygame.sprite.Group,
+        spawn_manager=None,
     ) -> int:
         """
         Check collisions between player bullets and enemies.
@@ -65,8 +66,24 @@ class CollisionManager:
                 # Apply damage
                 if enemy.take_damage(bullet.damage):
                     # Enemy died
+                    # Check if it's a boss
+                    from ..entities.enemies.boss_enemy import BossEnemy
+                    is_boss = isinstance(enemy, BossEnemy)
+                    
+                    if is_boss and spawn_manager:
+                        # Boss killed - register separately (don't count toward regular kills)
+                        spawn_manager.register_boss_killed()
+                        
+                        # Award +1 life for defeating boss
+                        player.lives = min(player.lives + 1, config.PLAYER_MAX_LIVES)
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.info(f"Boss defeated! Player awarded +1 life. Lives: {player.lives}/{config.PLAYER_MAX_LIVES}")
+                    else:
+                        # Regular enemy - count toward wave kills
+                        kills += 1
+                    
                     enemy.kill()
-                    kills += 1
                     
                     # Award points
                     base_points = enemy.score_value
@@ -155,6 +172,7 @@ class CollisionManager:
         enemies: pygame.sprite.Group,
         enemy_bullets: pygame.sprite.Group,
         hit_effects: pygame.sprite.Group,
+        spawn_manager=None,
     ) -> tuple[int, bool, int]:
         """
         Check all collision types in one call.
@@ -165,13 +183,14 @@ class CollisionManager:
             enemies: Group of enemy sprites
             enemy_bullets: Group of enemy bullet sprites
             hit_effects: Group to add hit effect sprites to
+            spawn_manager: Spawn manager for boss tracking
 
         Returns:
             Tuple of (points_earned, player_died, kills)
         """
 
         points, kills = self.check_player_bullet_enemy_collisions(
-            player_bullets, enemies, player, hit_effects
+            player_bullets, enemies, player, hit_effects, spawn_manager
         )
         
         died1 = self.check_enemy_bullet_player_collisions(enemy_bullets, player, hit_effects)

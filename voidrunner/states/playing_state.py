@@ -145,9 +145,17 @@ class PlayingState(BaseState):
             # Check if enemy should shoot
             if enemy.should_shoot():
                 bullet_sprite = self.game.asset_manager.get_sprite("enemy_bullet")
-                bullet = enemy.create_bullet(bullet_sprite)
-                self.enemy_bullets.add(bullet)
-                self.all_sprites.add(bullet)
+                bullets = enemy.create_bullet(bullet_sprite)
+                
+                # Boss returns list of bullets (penta-shot), regular enemies return single bullet
+                if isinstance(bullets, list):
+                    for bullet in bullets:
+                        self.enemy_bullets.add(bullet)
+                        self.all_sprites.add(bullet)
+                else:
+                    self.enemy_bullets.add(bullets)
+                    self.all_sprites.add(bullets)
+                
                 self.game.asset_manager.play_sound("enemy_shoot")
         
         # Check collisions
@@ -157,6 +165,7 @@ class PlayingState(BaseState):
             self.enemies,
             self.enemy_bullets,
             self.hit_effects,
+            self.spawn_manager,
         )
 
         # Counts enemies killed current wave

@@ -111,6 +111,12 @@ class Enemy(pygame.sprite.Sprite, ABC):
         Returns:
             True if enemy is completely off-screen
         """
+        # Bosses should never despawn due to off-screen check
+        from .enemies.boss_enemy import BossEnemy
+        if isinstance(self, BossEnemy):
+            # Only despawn boss if it goes way below screen (shouldn't happen)
+            return self.rect.top > config.SCREEN_HEIGHT + 200
+        
         return (
             self.rect.top > config.SCREEN_HEIGHT + 50  # Below screen
             or self.rect.bottom < -50  # Above screen

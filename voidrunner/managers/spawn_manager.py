@@ -9,6 +9,9 @@ import random
 import pygame
 
 from ..entities.enemies.basic_enemy import BasicEnemy
+from ..entities.enemies.boss_enemy import BossEnemy
+from ..entities.enemies.chaser_enemy import ChaserEnemy
+from ..entities.enemies.zigzag_enemy import ZigzagEnemy
 from ..utils import config, helpers
 
 
@@ -37,7 +40,11 @@ class SpawnManager:
         self.spawn_interval = config.ENEMY_SPAWN_RATE_BASE
         
         self.max_alive = config.ENEMIES_ON_SCREEN_MAX
-        # self.wave_complete = False
+        
+        # Boss wave tracking
+        self.boss_spawned = False
+        self.boss_killed = False
+        self.boss_level = 0
 
     def update(self, dt: float, enemy_group: pygame.sprite.Group) -> None:
         """
@@ -47,6 +54,20 @@ class SpawnManager:
             dt: Delta time in seconds
             enemy_group: Sprite group to add new enemies to
         """
+        # Spawn boss at start of boss wave (check if boss actually exists in group)
+        if self.is_boss_wave() and not self.boss_spawned:
+            # Double check no boss already exists
+            from ..entities.enemies.boss_enemy import BossEnemy
+            existing_boss = any(isinstance(enemy, BossEnemy) for enemy in enemy_group)
+            
+            if not existing_boss:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Spawning boss for wave {self.current_wave}!")
+                self._spawn_boss(enemy_group)
+            
+            self.boss_spawned = True
+        
         if self.enemies_killed_this_wave >= self.max_kills_this_wave:
             return
         
@@ -89,12 +110,45 @@ class SpawnManager:
         x = random.uniform(50, config.SCREEN_WIDTH - 50)
         y = -50
         
-        # For now, only spawn basic enemies
-        # TODO: Add other enemy types in later phases
-        sprite = self.asset_manager.get_sprite("basic_enemy")
-        enemy = BasicEnemy(x, y, sprite)
+        # Randomly choose enemy type
+        enemy_type = random.choices(
+            ["basic", "zigzag", "chaser"],
+            weights=[50, 30, 20],  # 50% basic, 30% zigzag, 20% chaser
+            k=1
+        )[0]
+        
+        if enemy_type == "basic":
+            sprite = self.asset_manager.get_sprite("basic_enemy")
+            enemy = BasicEnemy(x, y, sprite)
+        elif enemy_type == "chaser":
+            sprite = self.asset_manager.get_sprite("chaser_enemy")
+            enemy = ChaserEnemy(x, y, sprite)
+        else:  # zigzag
+            sprite = self.asset_manager.get_sprite("zigzag_enemy")
+            enemy = ZigzagEnemy(x, y, sprite)
         
         enemy_group.add(enemy)
+
+    def _spawn_boss(self, enemy_group: pygame.sprite.Group) -> None:
+        """
+        Spawn the boss enemy at the top of screen.
+
+        Args:
+            enemy_group: Sprite group to add the boss to
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Boss spawns at center top (visible from start)
+        x = config.SCREEN_WIDTH // 2
+        y = 100  # Start visible at top, will lock in place
+        
+        self.boss_level += 1
+        sprite = self.asset_manager.get_sprite("boss_enemy")
+        boss = BossEnemy(x, y, sprite, self.boss_level)
+        
+        logger.info(f"Boss created - Level: {self.boss_level}, Health: {boss.health}, Position: ({x}, {y})")
+        enemy_group.add(boss)
 
     def advance_wave(self) -> None:
         """
@@ -102,6 +156,10 @@ class SpawnManager:
         """
         self.current_wave += 1
         self.enemies_killed_this_wave = 0
+        
+        # Reset boss tracking
+        self.boss_spawned = False
+        self.boss_killed = False
         
         # Increase enemies per wave
         self.max_kills_this_wave = (
@@ -119,15 +177,14 @@ class SpawnManager:
         
         # Reset wave state
         self.enemies_spawned_this_wave = 0
-        # self.wave_complete = False
         self.spawn_timer = 0.0
 
     def is_wave_complete(self, enemy_group: pygame.sprite.Group) -> bool:
         """
         Check if the current wave is complete.
 
-        A wave is complete when all enemies have been spawned AND
-        all spawned enemies have been destroyed.
+        A wave is complete when all enemies have been killed.
+        For boss waves, boss must also be killed.
 
         Args:
             enemy_group: Sprite group containing active enemies
@@ -135,7 +192,26 @@ class SpawnManager:
         Returns:
             True if wave is complete
         """
-        return self.enemies_killed_this_wave >= self.max_kills_this_wave 
+        regular_enemies_done = self.enemies_killed_this_wave >= self.max_kills_this_wave
+        
+        if self.is_boss_wave():
+            # Boss wave requires boss to be killed too
+            return regular_enemies_done and self.boss_killed
+        else:
+            return regular_enemies_done
+    
+    def is_boss_wave(self) -> bool:
+        """
+        Check if current wave is a boss wave.
+
+        Returns:
+            True if this is a boss wave (every 5th wave)
+        """
+        return self.current_wave % config.BOSS_WAVE_INTERVAL == 0
+    
+    def register_boss_killed(self) -> None:
+        """Mark that the boss has been killed."""
+        self.boss_killed = True 
 
     def get_wave_number(self) -> int:
         """
