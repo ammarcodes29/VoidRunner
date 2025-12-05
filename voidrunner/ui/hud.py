@@ -32,6 +32,7 @@ class HUD:
         player,
         wave_number: int,
         high_score: int = 0,
+        spawn_manager = None,
     ) -> None:
         """
         Draw all HUD elements.
@@ -48,6 +49,7 @@ class HUD:
         self._draw_health(screen, player)
         self._draw_wave(screen, wave_number)
         self._draw_kill_streak(screen, player)
+        self._draw_enemy_kills(screen, spawn_manager)
         
         # Debug info
         if config.DEBUG_MODE:
@@ -150,8 +152,17 @@ class HUD:
             screen: Pygame surface to draw on
             wave_number: Current wave number
         """
-        wave_text = f"Wave: {wave_number}"
-        text_surface = self.font.render(wave_text, True, config.COLOR_YELLOW)
+        # Check if boss wave
+        is_boss_wave = wave_number % config.BOSS_WAVE_INTERVAL == 0
+        
+        if is_boss_wave:
+            wave_text = f"Wave {wave_number} - BOSS!"
+            text_color = config.COLOR_RED
+        else:
+            wave_text = f"Wave: {wave_number}"
+            text_color = config.COLOR_YELLOW
+        
+        text_surface = self.font.render(wave_text, True, text_color)
         
         # Position in top-right corner
         text_rect = text_surface.get_rect()
@@ -173,11 +184,11 @@ class HUD:
             streak_text = f"STREAK x{player.kill_streak}!"
             text_surface = self.font.render(streak_text, True, config.COLOR_GREEN)
             
-            # Position in top-right corner below wave
+            # Position in bottom-right corner to avoid overlapping with kills
             text_rect = text_surface.get_rect()
-            text_rect.topright = (
+            text_rect.bottomright = (
                 config.SCREEN_WIDTH - config.HUD_MARGIN,
-                config.HUD_MARGIN + 30,
+                config.SCREEN_HEIGHT - config.HUD_MARGIN,
             )
             screen.blit(text_surface, text_rect)
 
@@ -194,3 +205,48 @@ class HUD:
         # Could add entity count or other debug info here in the future
         pass
 
+    def _draw_enemy_kills(self, screen: pygame.Surface, spawn_manager) -> None:
+        """
+        Draw how many enemies the player has killed this wave.
+
+        Args:
+            screen: Pygame surface to draw on
+            spawn_manager: SpawnManager that stores kills and total enemies
+        """
+        # Position calculations for boss vs normal wave
+        is_boss_wave = spawn_manager.is_boss_wave()
+        
+        if is_boss_wave:
+            # During boss waves, show both counters vertically stacked
+            # Regular enemies kill count
+            kill_text = f"Foes: {spawn_manager.enemies_killed_this_wave}/{spawn_manager.max_kills_this_wave}"
+            text_surface = self.font.render(kill_text, True, config.COLOR_WHITE)
+            text_rect = text_surface.get_rect()
+            text_rect.topright = (
+                config.SCREEN_WIDTH - config.HUD_MARGIN,
+                config.HUD_MARGIN + 30,
+            )
+            screen.blit(text_surface, text_rect)
+            
+            # Boss kill count
+            boss_status = "1/1" if spawn_manager.boss_killed else "0/1"
+            boss_color = config.COLOR_GREEN if spawn_manager.boss_killed else config.COLOR_RED
+            boss_text = f"Boss: {boss_status}"
+            boss_surface = self.font.render(boss_text, True, boss_color)
+            
+            boss_rect = boss_surface.get_rect()
+            boss_rect.topright = (
+                config.SCREEN_WIDTH - config.HUD_MARGIN,
+                config.HUD_MARGIN + 55,
+            )
+            screen.blit(boss_surface, boss_rect)
+        else:
+            # Normal waves, just show regular kills
+            kill_text = f"Kills: {spawn_manager.enemies_killed_this_wave}/{spawn_manager.max_kills_this_wave}"
+            text_surface = self.font.render(kill_text, True, config.COLOR_WHITE)
+            text_rect = text_surface.get_rect()
+            text_rect.topright = (
+                config.SCREEN_WIDTH - config.HUD_MARGIN,
+                config.HUD_MARGIN + 30,
+            )
+            screen.blit(text_surface, text_rect)

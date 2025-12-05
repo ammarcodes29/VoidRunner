@@ -18,7 +18,14 @@ class BasicEnemy(Enemy):
     and occasionally shooting at the player.
     """
 
-    def __init__(self, x: float, y: float, sprite: pygame.Surface) -> None:
+    def __init__(
+        self,
+        x: float,
+        y: float,
+        sprite: pygame.Surface,
+        bullet_speed_multiplier: float = 1.0,
+        fire_rate_multiplier: float = 1.0,
+    ) -> None:
         """
         Initialize a basic enemy.
 
@@ -26,6 +33,8 @@ class BasicEnemy(Enemy):
             x: Starting x position
             y: Starting y position
             sprite: Pygame surface for rendering
+            bullet_speed_multiplier: Difficulty scaling for bullet speed
+            fire_rate_multiplier: Difficulty scaling for fire rate
         """
         speed = config.ENEMY_BASE_SPEED * config.BASIC_ENEMY_SPEED_MULT
         super().__init__(
@@ -35,6 +44,8 @@ class BasicEnemy(Enemy):
             speed=speed,
             score_value=config.BASIC_ENEMY_POINTS,
             sprite=sprite,
+            bullet_speed_multiplier=bullet_speed_multiplier,
+            fire_rate_multiplier=fire_rate_multiplier,
         )
         
         # Basic enemies can shoot

@@ -56,12 +56,15 @@ class AssetManager:
             # Player sprites
             "player": (config.PLAYER_SPRITE_WIDTH, config.PLAYER_SPRITE_HEIGHT, config.COLOR_BLUE),
             "player_bullet": (config.BULLET_SPRITE_WIDTH, config.BULLET_SPRITE_HEIGHT, config.COLOR_GREEN),
+            "player_bullet_hit": (config.BULLET_SPRITE_WIDTH, config.BULLET_SPRITE_HEIGHT, config.COLOR_YELLOW),
             
             # Enemy sprites
             "basic_enemy": (config.ENEMY_SPRITE_WIDTH, config.ENEMY_SPRITE_HEIGHT, config.COLOR_RED),
             "chaser_enemy": (config.ENEMY_SPRITE_WIDTH, config.ENEMY_SPRITE_HEIGHT, (255, 128, 0)),  # Orange
             "zigzag_enemy": (config.ENEMY_SPRITE_WIDTH, config.ENEMY_SPRITE_HEIGHT, (255, 0, 255)),  # Magenta
+            "boss_enemy": (config.ENEMY_SPRITE_WIDTH * 2, config.ENEMY_SPRITE_HEIGHT * 2, (128, 0, 0)),  # Dark Red
             "enemy_bullet": (config.BULLET_SPRITE_WIDTH, config.BULLET_SPRITE_HEIGHT, config.COLOR_RED),
+            "enemy_bullet_hit": (config.BULLET_SPRITE_WIDTH, config.BULLET_SPRITE_HEIGHT, (255, 128, 0)),  # Orange
             
             # Power-up sprites
             "powerup_rapid_fire": (config.POWERUP_SPRITE_WIDTH, config.POWERUP_SPRITE_HEIGHT, config.COLOR_YELLOW),
@@ -124,18 +127,23 @@ class AssetManager:
         ]
 
         for sound_name in sound_definitions:
-            sound_path = config.SOUNDS_DIR / f"{sound_name}.wav"
+            # Try both .ogg and .wav formats
+            loaded = False
+            for ext in ['.ogg', '.wav']:
+                sound_path = config.SOUNDS_DIR / f"{sound_name}{ext}"
+                
+                if sound_path.exists():
+                    try:
+                        sound = pygame.mixer.Sound(str(sound_path))
+                        sound.set_volume(config.SFX_VOLUME)
+                        self.sounds[sound_name] = sound
+                        logger.debug(f"Loaded sound: {sound_name}{ext}")
+                        loaded = True
+                        break
+                    except pygame.error as e:
+                        logger.warning(f"Failed to load {sound_name}{ext}: {e}")
             
-            if sound_path.exists():
-                try:
-                    sound = pygame.mixer.Sound(str(sound_path))
-                    sound.set_volume(config.SFX_VOLUME)
-                    self.sounds[sound_name] = sound
-                    logger.debug(f"Loaded sound: {sound_name}")
-                except pygame.error as e:
-                    logger.warning(f"Failed to load {sound_name}: {e}")
-                    self.sounds[sound_name] = self._create_silent_sound()
-            else:
+            if not loaded:
                 # Create silent placeholder
                 self.sounds[sound_name] = self._create_silent_sound()
                 logger.debug(f"Created placeholder sound: {sound_name}")
@@ -159,7 +167,10 @@ class AssetManager:
             hud_font_path = config.FONTS_DIR / "hud_font.ttf"
             menu_font_path = config.FONTS_DIR / "menu_font.ttf"
             
+            # Store the custom font path for dynamic loading
+            self.custom_font_path = None
             if hud_font_path.exists():
+                self.custom_font_path = str(hud_font_path)
                 self.fonts["hud"] = pygame.font.Font(str(hud_font_path), config.HUD_FONT_SIZE)
             else:
                 self.fonts["hud"] = pygame.font.Font(None, config.HUD_FONT_SIZE)
@@ -176,9 +187,29 @@ class AssetManager:
         except Exception as e:
             logger.error(f"Failed to load fonts: {e}")
             # Fallback to default fonts
+            self.custom_font_path = None
             self.fonts["hud"] = pygame.font.Font(None, config.HUD_FONT_SIZE)
             self.fonts["menu"] = pygame.font.Font(None, config.MENU_FONT_SIZE)
             self.fonts["debug"] = pygame.font.Font(None, 18)
+
+    def load_font(self, size: int) -> pygame.font.Font:
+        """
+        Load custom font at specified size.
+        
+        Args:
+            size: Font size in points
+            
+        Returns:
+            Pygame Font object
+        """
+        if self.custom_font_path:
+            try:
+                return pygame.font.Font(self.custom_font_path, size)
+            except Exception as e:
+                logger.warning(f"Failed to load custom font at size {size}: {e}")
+                return pygame.font.Font(None, size)
+        else:
+            return pygame.font.Font(None, size)
 
     def get_sprite(self, name: str) -> Optional[pygame.Surface]:
         """

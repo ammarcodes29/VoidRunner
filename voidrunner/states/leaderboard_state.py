@@ -24,11 +24,11 @@ class LeaderboardState(BaseState):
         """Initialize the leaderboard state."""
         super().__init__(game)
         
-        # Fonts
-        self.title_font = pygame.font.Font(None, 72)
-        self.header_font = pygame.font.Font(None, 40)
-        self.score_font = pygame.font.Font(None, 32)
-        self.button_font = pygame.font.Font(None, 42)
+        # Fonts (reduced sizes)
+        self.title_font = game.asset_manager.load_font(48)  # Was 72
+        self.header_font = game.asset_manager.load_font(28)  # Was 40
+        self.score_font = game.asset_manager.load_font(22)   # Was 32
+        self.button_font = game.asset_manager.load_font(28)  # Was 42
         
         # Background
         self.background = game.asset_manager.get_sprite("background")

@@ -38,6 +38,7 @@ class PlayingState(BaseState):
         self.player_bullets = pygame.sprite.Group()
         self.enemy_bullets = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
+        self.hit_effects = pygame.sprite.Group()
         self.all_sprites = pygame.sprite.Group()
         
         # Player
@@ -134,6 +135,9 @@ class PlayingState(BaseState):
         self.player_bullets.update(dt)
         self.enemy_bullets.update(dt)
         
+        # Update hit effects
+        self.hit_effects.update(dt)
+        
         # Update enemies
         for enemy in self.enemies:
             enemy.update(dt, self.player.position)
@@ -141,23 +145,38 @@ class PlayingState(BaseState):
             # Check if enemy should shoot
             if enemy.should_shoot():
                 bullet_sprite = self.game.asset_manager.get_sprite("enemy_bullet")
-                bullet = enemy.create_bullet(bullet_sprite)
-                self.enemy_bullets.add(bullet)
-                self.all_sprites.add(bullet)
+                bullets = enemy.create_bullet(bullet_sprite)
+                
+                # Boss returns list of bullets (penta-shot), regular enemies return single bullet
+                if isinstance(bullets, list):
+                    for bullet in bullets:
+                        self.enemy_bullets.add(bullet)
+                        self.all_sprites.add(bullet)
+                else:
+                    self.enemy_bullets.add(bullets)
+                    self.all_sprites.add(bullets)
+                
                 self.game.asset_manager.play_sound("enemy_shoot")
         
         # Check collisions
-        points_earned, player_died = self.collision_manager.check_all_collisions(
+        points_earned, player_died, kills = self.collision_manager.check_all_collisions(
             self.player,
             self.player_bullets,
             self.enemies,
             self.enemy_bullets,
+            self.hit_effects,
+            self.spawn_manager,
         )
+
+        # Counts enemies killed current wave
+        self.spawn_manager.enemies_killed_this_wave += kills
         
         self.score += points_earned
         
         if player_died:
             self.game_over = True
+            # Play game over sound
+            self.game.asset_manager.play_sound("player_hit")
             # Save score to database and check if it's a new high score
             previous_high_score = self.game.data_manager.get_high_score()
             self.game.data_manager.save_score(self.score)
@@ -166,6 +185,13 @@ class PlayingState(BaseState):
         
         # Check for wave completion
         if self.spawn_manager.is_wave_complete(self.enemies):
+            self.player.hp = min(self.player.max_health, self.player.health + 50)
+            for bullet in self.player_bullets:
+                bullet.kill()
+            for bullet in self.enemy_bullets:
+                bullet.kill()
+            for enemy in self.enemies:
+                enemy.kill()
             self._start_wave_transition()
 
     def _update_wave_transition(self, dt: float) -> None:
@@ -223,6 +249,10 @@ class PlayingState(BaseState):
         for enemy in self.enemies:
             enemy.draw(screen)
         
+        # Draw hit effects
+        for effect in self.hit_effects:
+            effect.draw(screen)
+        
         # Draw HUD
         self.hud.draw(
             screen,
@@ -230,6 +260,7 @@ class PlayingState(BaseState):
             self.player,
             self.spawn_manager.get_wave_number(),
             self.game.data_manager.get_high_score(),
+            spawn_manager=self.spawn_manager,
         )
         
         # Draw wave transition message

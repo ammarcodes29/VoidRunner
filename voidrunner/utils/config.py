@@ -44,6 +44,7 @@ ENEMY_SPAWN_RATE_BASE: float = 2.0  # seconds between spawns
 WAVE_DIFFICULTY_MULTIPLIER: float = 1.15  # spawn rate increase per wave
 ENEMY_SPRITE_WIDTH: int = 64
 ENEMY_SPRITE_HEIGHT: int = 64
+ENEMIES_ON_SCREEN_MAX: int = 5
 
 # Enemy-specific speeds (multipliers of base speed)
 BASIC_ENEMY_SPEED_MULT: float = 1.0
@@ -94,6 +95,28 @@ ENEMIES_PER_WAVE_BASE: int = 5
 ENEMIES_PER_WAVE_INCREMENT: int = 2  # additional enemies per wave
 
 # ============================================================================
+# BOSS SYSTEM
+# ============================================================================
+BOSS_WAVE_INTERVAL: int = 5  # Boss appears every 5 waves
+BOSS_BASE_HEALTH: int = 50  # Base boss health (first boss)
+BOSS_HEALTH_MULTIPLIER: float = 1.3  # Health increase per boss level
+BOSS_SIZE_MULTIPLIER: float = 1.5  # Boss sprite scale (1.5x normal)
+BOSS_BULLET_COUNT: int = 5  # Penta-shot attack
+BOSS_BASE_FIRE_RATE: float = 2.0  # Seconds between boss attacks
+BOSS_FIRE_RATE_DECREASE: float = 0.9  # Faster each boss (multiplier)
+BOSS_BULLET_SPEED_MULTIPLIER: float = 1.15  # Speed increase per boss level
+BOSS_POINTS: int = 500  # Score for killing boss
+BOSS_MOVEMENT_SPEED: float = 1.5  # Horizontal movement speed
+BOSS_MOVEMENT_RANGE: float = 200.0  # How far boss moves left/right
+
+# ============================================================================
+# DIFFICULTY SCALING
+# ============================================================================
+DIFFICULTY_SCALE_INTERVAL: int = 6  # Scale difficulty every 6 waves
+ENEMY_BULLET_SPEED_SCALE: float = 1.05  # 5% faster bullets per interval
+ENEMY_FIRE_RATE_SCALE: float = 0.95  # 5% more frequent (lower = faster)
+
+# ============================================================================
 # VISUAL EFFECTS
 # ============================================================================
 SCREEN_SHAKE_DURATION: float = 0.2  # seconds
@@ -106,9 +129,9 @@ EXPLOSION_PARTICLE_COUNT: int = 15
 # UI SETTINGS
 # ============================================================================
 HUD_MARGIN: int = 10
-HUD_FONT_SIZE: int = 24
+HUD_FONT_SIZE: int = 18  # Reduced from 24
 HUD_FONT_NAME: str = "Arial"
-MENU_FONT_SIZE: int = 48
+MENU_FONT_SIZE: int = 36  # Reduced from 48
 MENU_FONT_NAME: str = "Arial"
 
 # Colors (RGB tuples)

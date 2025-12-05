@@ -31,12 +31,12 @@ class LoginState(BaseState):
         self.message_color = config.COLOR_WHITE
         self.active_field = "username"  # "username" or "password"
         
-        # Fonts
-        self.title_font = pygame.font.Font(None, 72)
-        self.menu_font = pygame.font.Font(None, 48)
-        self.input_font = pygame.font.Font(None, 36)
-        self.message_font = pygame.font.Font(None, 28)
-        self.button_font = pygame.font.Font(None, 42)
+        # Fonts (reduced sizes)
+        self.title_font = game.asset_manager.load_font(48)  # Was 72
+        self.menu_font = game.asset_manager.load_font(32)   # Was 48
+        self.input_font = game.asset_manager.load_font(24)  # Was 36
+        self.message_font = game.asset_manager.load_font(18) # Was 28
+        self.button_font = game.asset_manager.load_font(28)  # Was 42
         
         # Mouse tracking
         self.mouse_pos = (0, 0)
@@ -300,8 +300,8 @@ class LoginState(BaseState):
         label_rect = label_text.get_rect(midright=(config.SCREEN_WIDTH // 2 - 20, y))
         screen.blit(label_text, label_rect)
         
-        # Input box
-        box_rect = pygame.Rect(config.SCREEN_WIDTH // 2, y - 20, 250, 40)
+        # Input box (wider to accommodate text)
+        box_rect = pygame.Rect(config.SCREEN_WIDTH // 2, y - 20, 280, 40)
         
         # Store rectangle for click detection
         if field_name == "username":

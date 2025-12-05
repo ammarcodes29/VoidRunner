@@ -26,16 +26,17 @@ class MenuState(BaseState):
         """
         super().__init__(game)
         
-        # Fonts
-        self.title_font = pygame.font.Font(None, 96)
+        # Fonts (reduced sizes)
+        self.title_font = game.asset_manager.load_font(64)  # Was 96
         self.menu_font = game.asset_manager.get_font("menu")
         self.info_font = game.asset_manager.get_font("hud")
+        self.button_font = game.asset_manager.load_font(24)  # Smaller text for buttons
         
-        # Buttons
-        self.start_button_rect = pygame.Rect(0, 0, 320, 70)
+        # Buttons (wider to fit text)
+        self.start_button_rect = pygame.Rect(0, 0, 360, 70)
         self.start_button_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + 100)
         
-        self.leaderboard_button_rect = pygame.Rect(0, 0, 320, 70)
+        self.leaderboard_button_rect = pygame.Rect(0, 0, 360, 70)
         self.leaderboard_button_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + 190)
         
         self.logout_button_rect = pygame.Rect(0, 0, 200, 50)
@@ -179,8 +180,8 @@ class MenuState(BaseState):
             pygame.draw.rect(screen, color, rect, 2, border_radius=10)
             text_color = config.COLOR_WHITE
         
-        # Button text
-        button_surface = self.menu_font.render(text, True, text_color)
+        # Button text (use smaller font)
+        button_surface = self.button_font.render(text, True, text_color)
         button_text_rect = button_surface.get_rect(center=rect.center)
         screen.blit(button_surface, button_text_rect)
 
