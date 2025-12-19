@@ -157,15 +157,23 @@ class SpawnManager:
         import logging
         logger = logging.getLogger(__name__)
         
+        # Debug: Count existing bosses before spawning
+        existing_boss_count = sum(1 for e in enemy_group if isinstance(e, BossEnemy))
+        logger.info(f"_spawn_boss called - Existing bosses: {existing_boss_count}, boss_spawned flag: {self.boss_spawned}")
+        
         # Boss spawns at center top (visible from start)
         x = config.SCREEN_WIDTH // 2
-        y = 100  # Start visible at top, will lock in place
+        y = 120  # Start visible at top with breathing room, will lock in place
         
         self.boss_level += 1
         sprite = self.asset_manager.get_sprite("boss_enemy")
         boss = BossEnemy(x, y, sprite, self.boss_level)
         
-        logger.info(f"Boss created - Level: {self.boss_level}, Health: {boss.health}, Position: ({x}, {y})")
+        # Log boss details including sprite size
+        logger.info(
+            f"Boss created - Level: {self.boss_level}, Health: {boss.health}, "
+            f"Position: ({x}, {y}), Sprite size: {boss.image.get_width()}x{boss.image.get_height()}"
+        )
         enemy_group.add(boss)
 
     def advance_wave(self) -> None:

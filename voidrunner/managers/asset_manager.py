@@ -62,7 +62,11 @@ class AssetManager:
             "basic_enemy": (config.ENEMY_SPRITE_WIDTH, config.ENEMY_SPRITE_HEIGHT, config.COLOR_RED),
             "chaser_enemy": (config.ENEMY_SPRITE_WIDTH, config.ENEMY_SPRITE_HEIGHT, (255, 128, 0)),  # Orange
             "zigzag_enemy": (config.ENEMY_SPRITE_WIDTH, config.ENEMY_SPRITE_HEIGHT, (255, 0, 255)),  # Magenta
-            "boss_enemy": (config.ENEMY_SPRITE_WIDTH * 2, config.ENEMY_SPRITE_HEIGHT * 2, (128, 0, 0)),  # Dark Red
+            "boss_enemy": (
+                int(config.ENEMY_SPRITE_WIDTH * config.BOSS_SIZE_MULTIPLIER),
+                int(config.ENEMY_SPRITE_HEIGHT * config.BOSS_SIZE_MULTIPLIER),
+                (128, 0, 0)
+            ),  # Dark Red - scaled by BOSS_SIZE_MULTIPLIER
             "enemy_bullet": (config.BULLET_SPRITE_WIDTH, config.BULLET_SPRITE_HEIGHT, config.COLOR_RED),
             "enemy_bullet_hit": (config.BULLET_SPRITE_WIDTH, config.BULLET_SPRITE_HEIGHT, (255, 128, 0)),  # Orange
             

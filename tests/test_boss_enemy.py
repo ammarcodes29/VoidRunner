@@ -30,9 +30,9 @@ class TestBossEnemy:
         assert boss.can_shoot is True
         assert boss.score_value == config.BOSS_POINTS
         
-        # Boss should be larger than normal enemy
-        assert boss.image.get_width() > boss_sprite.get_width()
-        assert boss.image.get_height() > boss_sprite.get_height()
+        # Boss uses the sprite as-is (scaling happens in AssetManager)
+        assert boss.image.get_width() == boss_sprite.get_width()
+        assert boss.image.get_height() == boss_sprite.get_height()
 
     def test_boss_health_scaling(self, boss_sprite):
         """Test boss health increases with each level."""
@@ -85,8 +85,8 @@ class TestBossEnemy:
             boss.update_behavior(0.016, player_pos)  # ~60 FPS
             boss.position += boss.velocity * 0.016 * 60
         
-        # Boss should be near the top (around y=100)
-        assert boss.position.y < 150
+        # Boss should be near the top (around y=120)
+        assert boss.position.y < 170
 
     def test_boss_follows_player_horizontally(self, boss_sprite):
         """Test boss tracks player's x position."""

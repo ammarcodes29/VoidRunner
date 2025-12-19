@@ -32,12 +32,8 @@ class BossEnemy(Enemy):
         health = int(config.BOSS_BASE_HEALTH * (config.BOSS_HEALTH_MULTIPLIER ** (boss_level - 1)))
         score_value = config.BOSS_POINTS * boss_level
         
-        # Scale sprite to be larger
-        scaled_sprite = pygame.transform.scale(
-            sprite,
-            (int(sprite.get_width() * config.BOSS_SIZE_MULTIPLIER),
-             int(sprite.get_height() * config.BOSS_SIZE_MULTIPLIER))
-        )
+        # Sprite is already scaled by BOSS_SIZE_MULTIPLIER in AssetManager
+        # No additional scaling needed here
         
         super().__init__(
             x=x,
@@ -45,7 +41,7 @@ class BossEnemy(Enemy):
             health=health,
             speed=config.BOSS_MOVEMENT_SPEED,
             score_value=score_value,
-            sprite=scaled_sprite,
+            sprite=sprite,
         )
         
         # Boss specific properties
@@ -75,19 +71,24 @@ class BossEnemy(Enemy):
         self.time_alive += dt
         
         # Update target position gradually towards player (creates delay effect)
-        delay_factor = 2.5  # Lower = more delay, Higher = faster response
+        # Use smooth interpolation instead of velocity-based movement to prevent oscillation
+        delay_factor = 2.0  # How quickly boss tracks player (lower = more delay)
         self.target_x += (player_pos.x - self.target_x) * delay_factor * dt
         
-        # Move towards the delayed target position with capped speed
-        x_diff = self.target_x - self.position.x
-        max_speed = 200.0  # Cap horizontal speed to prevent overflow
+        # Smoothly interpolate position towards target (prevents oscillation)
+        # Use direct position lerp instead of velocity to ensure stability
+        lerp_speed = 3.0  # How quickly boss moves to target position
+        lerp_factor = min(1.0, lerp_speed * dt)  # Clamp to prevent overshoot
         
-        # Calculate velocity and clamp it
-        desired_velocity_x = x_diff * 3.0
-        self.velocity.x = max(-max_speed, min(max_speed, desired_velocity_x))
+        # Directly interpolate position (stable, no oscillation)
+        self.position.x += (self.target_x - self.position.x) * lerp_factor
+        
+        # Set velocity to 0 since we're moving position directly
+        # (velocity is still used by base class but we override the movement)
+        self.velocity.x = 0
         
         # STAY at top - no vertical movement once in position
-        target_y = 100  # Fixed Y position at top
+        target_y = 120  # Fixed Y position at top with breathing room
         
         # Only move down if above target, otherwise lock in place
         if self.position.y < target_y:
