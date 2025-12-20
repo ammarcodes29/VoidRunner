@@ -67,3 +67,6 @@ voidrunner/data/*.json
 *.dmg
 *.app
 
+# MediaPipe models (download separately - see assets/models/README.md)
+*.task
+

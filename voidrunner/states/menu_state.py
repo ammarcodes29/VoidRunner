@@ -34,12 +34,16 @@ class MenuState(BaseState):
         
         # Buttons (wider to fit text)
         self.start_button_rect = pygame.Rect(0, 0, 360, 70)
-        self.start_button_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + 100)
+        self.start_button_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + 60)
+        
+        # CV Mode button (mysterious ???)
+        self.cv_mode_button_rect = pygame.Rect(0, 0, 360, 70)
+        self.cv_mode_button_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + 140)
         
         self.leaderboard_button_rect = pygame.Rect(0, 0, 360, 70)
-        self.leaderboard_button_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + 190)
+        self.leaderboard_button_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + 220)
         
-        self.logout_button_rect = pygame.Rect(0, 0, 200, 50)
+        self.logout_button_rect = pygame.Rect(0, 0, 150, 50)
         self.logout_button_rect.bottomright = (config.SCREEN_WIDTH - 20, config.SCREEN_HEIGHT - 20)
         
         # Mouse tracking
@@ -62,6 +66,8 @@ class MenuState(BaseState):
                 if event.button == 1:  # Left click
                     if self.start_button_rect.collidepoint(event.pos):
                         self._start_game()
+                    elif self.cv_mode_button_rect.collidepoint(event.pos):
+                        self._start_cv_mode()
                     elif self.leaderboard_button_rect.collidepoint(event.pos):
                         self._show_leaderboard()
                     elif self.logout_button_rect.collidepoint(event.pos):
@@ -82,6 +88,13 @@ class MenuState(BaseState):
         from .playing_state import PlayingState
         self.game.current_state.exit()
         self.game.current_state = PlayingState(self.game)
+        self.game.current_state.enter()
+
+    def _start_cv_mode(self) -> None:
+        """Transition to CV (hand tracking) playing state."""
+        from .cv_playing_state import CVPlayingState
+        self.game.current_state.exit()
+        self.game.current_state = CVPlayingState(self.game)
         self.game.current_state.enter()
 
     def _show_leaderboard(self) -> None:
@@ -108,6 +121,7 @@ class MenuState(BaseState):
         """
         # Change cursor to hand when hovering over buttons
         if (self.start_button_rect.collidepoint(self.mouse_pos) or
+            self.cv_mode_button_rect.collidepoint(self.mouse_pos) or
             self.leaderboard_button_rect.collidepoint(self.mouse_pos) or
             self.logout_button_rect.collidepoint(self.mouse_pos)):
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
@@ -155,6 +169,9 @@ class MenuState(BaseState):
         
         # Draw Start Game button
         self._draw_button(screen, "START GAME", self.start_button_rect, config.COLOR_GREEN)
+        
+        # Draw CV Mode button (mysterious purple color)
+        self._draw_button(screen, "???", self.cv_mode_button_rect, (148, 0, 211))
         
         # Draw Leaderboard button
         self._draw_button(screen, "LEADERBOARD", self.leaderboard_button_rect, config.COLOR_BLUE)

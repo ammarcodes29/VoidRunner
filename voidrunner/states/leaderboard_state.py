@@ -24,11 +24,11 @@ class LeaderboardState(BaseState):
         """Initialize the leaderboard state."""
         super().__init__(game)
         
-        # Fonts (reduced sizes)
-        self.title_font = game.asset_manager.load_font(48)  # Was 72
-        self.header_font = game.asset_manager.load_font(28)  # Was 40
-        self.score_font = game.asset_manager.load_font(22)   # Was 32
-        self.button_font = game.asset_manager.load_font(28)  # Was 42
+        # Fonts (sized to fit 800x600 screen)
+        self.title_font = game.asset_manager.load_font(40)  # Reduced to fit title
+        self.header_font = game.asset_manager.load_font(28)
+        self.score_font = game.asset_manager.load_font(22)
+        self.button_font = game.asset_manager.load_font(28)
         
         # Background
         self.background = game.asset_manager.get_sprite("background")
@@ -163,7 +163,7 @@ class LeaderboardState(BaseState):
 
     def _draw_back_button(self, screen: pygame.Surface) -> None:
         """Draw the back button."""
-        button_width = 200
+        button_width = 350
         button_height = 50
         button_x = config.SCREEN_WIDTH // 2 - button_width // 2
         button_y = config.SCREEN_HEIGHT - 80
