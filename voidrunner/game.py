@@ -37,10 +37,9 @@ class Game:
         pygame.init()
         pygame.mixer.init()
         
-        # Create window
-        self.screen = pygame.display.set_mode(
-            (config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
-        )
+        # Display settings
+        self.fullscreen = False
+        self.screen = self._create_display()
         pygame.display.set_caption(config.WINDOW_TITLE)
         
         # Clock for frame rate control
@@ -116,7 +115,10 @@ class Game:
                 self.running = False
             elif event.type == pygame.KEYDOWN:
                 # Global key bindings
-                if event.key == pygame.K_F3:
+                if event.key == pygame.K_f:
+                    # Toggle fullscreen
+                    self._toggle_fullscreen()
+                elif event.key == pygame.K_F3:
                     # Toggle debug mode
                     self.debug_mode = not self.debug_mode
                     logger.info(f"Debug mode: {self.debug_mode}")
@@ -137,6 +139,29 @@ class Game:
         from .states.menu_state import MenuState
         self.current_state = MenuState(self)
         self.current_state.enter()
+
+    def _create_display(self) -> pygame.Surface:
+        """
+        Create the display surface (windowed with scaling support).
+
+        Returns:
+            The pygame display surface
+        """
+        # Use SCALED for automatic scaling, RESIZABLE for window flexibility
+        return pygame.display.set_mode(
+            (config.SCREEN_WIDTH, config.SCREEN_HEIGHT),
+            pygame.SCALED | pygame.RESIZABLE
+        )
+
+    def _toggle_fullscreen(self) -> None:
+        """Toggle between fullscreen and windowed mode."""
+        # Use pygame's built-in toggle which handles platform differences
+        result = pygame.display.toggle_fullscreen()
+        if result:
+            self.fullscreen = not self.fullscreen
+            logger.info(f"Fullscreen: {self.fullscreen}")
+        else:
+            logger.warning("Fullscreen toggle not supported on this platform")
 
     def _draw_fps(self) -> None:
         """Draw FPS counter in debug mode with background for visibility."""
