@@ -59,9 +59,17 @@ class PlayingState(BaseState):
         # Game state
         self.score = 0
         self.game_over = False
+        self.paused = False
         self.wave_transition_timer = 0.0
         self.in_wave_transition = False
         self.is_new_high_score = False
+        
+        # Pause menu buttons
+        self.resume_button_rect = pygame.Rect(0, 0, 280, 60)
+        self.resume_button_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + 20)
+        self.quit_button_rect = pygame.Rect(0, 0, 280, 60)
+        self.quit_button_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + 100)
+        self.mouse_pos = (0, 0)
         
         # Background
         self.background = game.asset_manager.get_sprite("background")
@@ -74,7 +82,17 @@ class PlayingState(BaseState):
             events: List of pygame events from this frame
         """
         for event in events:
-            if event.type == pygame.KEYDOWN:
+            if event.type == pygame.MOUSEMOTION:
+                self.mouse_pos = event.pos
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1 and self.paused:
+                    # Handle pause menu button clicks
+                    if self.resume_button_rect.collidepoint(event.pos):
+                        self.paused = False
+                        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+                    elif self.quit_button_rect.collidepoint(event.pos):
+                        self._return_to_menu()
+            elif event.type == pygame.KEYDOWN:
                 if self.game_over:
                     # Handle game over input
                     if event.key == pygame.K_r:
@@ -86,11 +104,17 @@ class PlayingState(BaseState):
                     elif event.key == pygame.K_ESCAPE:
                         # Quit game
                         self.game.running = False
+                elif self.paused:
+                    # Handle pause input
+                    if event.key == pygame.K_ESCAPE:
+                        # Resume game
+                        self.paused = False
+                        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
                 else:
                     # Normal gameplay input
                     if event.key == pygame.K_ESCAPE:
-                        # TODO: Transition to pause state
-                        pass
+                        # Pause game
+                        self.paused = True
                     elif event.key == pygame.K_SPACE:
                         # Shoot
                         if self.player.can_shoot():
@@ -107,7 +131,15 @@ class PlayingState(BaseState):
             dt: Delta time in seconds since last frame
         """
         if self.game_over:
-            # TODO: Transition to game over state
+            return
+        
+        if self.paused:
+            # Update cursor for pause menu buttons
+            if (self.resume_button_rect.collidepoint(self.mouse_pos) or
+                self.quit_button_rect.collidepoint(self.mouse_pos)):
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+            else:
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
             return
         
         # Handle wave transitions
@@ -223,9 +255,92 @@ class PlayingState(BaseState):
     def _return_to_menu(self) -> None:
         """Return to main menu."""
         from .menu_state import MenuState
+        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
         self.exit()
         self.game.current_state = MenuState(self.game)
         self.game.current_state.enter()
+
+    def _draw_pause_menu(self, screen: pygame.Surface) -> None:
+        """
+        Draw pause menu overlay with buttons.
+
+        Args:
+            screen: Pygame surface to draw on
+        """
+        # Semi-transparent overlay
+        overlay = pygame.Surface((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
+        overlay.set_alpha(180)
+        overlay.fill(config.COLOR_BLACK)
+        screen.blit(overlay, (0, 0))
+        
+        # "PAUSED" title
+        title_font = self.game.asset_manager.get_font("menu")
+        title_text = "PAUSED"
+        title_surface = title_font.render(title_text, True, config.COLOR_WHITE)
+        title_rect = title_surface.get_rect()
+        title_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 - 80)
+        screen.blit(title_surface, title_rect)
+        
+        # Button font
+        button_font = self.game.asset_manager.get_font("hud")
+        
+        # Resume button
+        self._draw_pause_button(
+            screen, "RESUME", self.resume_button_rect,
+            config.COLOR_GREEN, button_font
+        )
+        
+        # Quit to Menu button
+        self._draw_pause_button(
+            screen, "QUIT TO MENU", self.quit_button_rect,
+            config.COLOR_RED, button_font
+        )
+        
+        # Hint text
+        hint_font = self.game.asset_manager.get_font("hud")
+        hint_text = "Press ESC to resume"
+        hint_surface = hint_font.render(hint_text, True, config.COLOR_GRAY)
+        hint_rect = hint_surface.get_rect()
+        hint_rect.center = (config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + 170)
+        screen.blit(hint_surface, hint_rect)
+
+    def _draw_pause_button(
+        self,
+        screen: pygame.Surface,
+        text: str,
+        rect: pygame.Rect,
+        color: tuple,
+        font: pygame.font.Font,
+    ) -> None:
+        """
+        Draw a pause menu button.
+
+        Args:
+            screen: Pygame surface to draw on
+            text: Button text
+            rect: Button rectangle
+            color: Button color
+            font: Font for button text
+        """
+        is_hovering = rect.collidepoint(self.mouse_pos)
+        
+        if is_hovering:
+            # Filled button on hover
+            pygame.draw.rect(screen, color, rect, border_radius=8)
+            pygame.draw.rect(screen, config.COLOR_WHITE, rect, 3, border_radius=8)
+            text_color = config.COLOR_WHITE
+        else:
+            # Outlined button
+            fill_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+            fill_surface.fill((*color, 60))
+            screen.blit(fill_surface, rect.topleft)
+            pygame.draw.rect(screen, color, rect, 2, border_radius=8)
+            text_color = config.COLOR_WHITE
+        
+        # Button text
+        text_surface = font.render(text, True, text_color)
+        text_rect = text_surface.get_rect(center=rect.center)
+        screen.blit(text_surface, text_rect)
 
     def draw(self, screen: pygame.Surface) -> None:
         """
@@ -266,6 +381,10 @@ class PlayingState(BaseState):
         # Draw wave transition message
         if self.in_wave_transition:
             self._draw_wave_transition_message(screen)
+        
+        # Draw pause menu
+        if self.paused:
+            self._draw_pause_menu(screen)
         
         # Draw game over message
         if self.game_over:
