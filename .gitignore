@@ -32,6 +32,10 @@ env/
 voidrunner/venv/
 **/venv/
 
+# Python cache files
+**/__pycache__/
+*.py[cod]
+
 
 # IDE
 .vscode/
